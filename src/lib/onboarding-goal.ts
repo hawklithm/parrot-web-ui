@@ -2,7 +2,9 @@ export function parseOnboardingGoalInput(raw: string): {
   title: string;
   description: string | null;
 } {
+  console.log('[DEBUG] parseOnboardingGoalInput raw:', JSON.stringify(raw));
   const trimmed = raw.trim();
+  console.log('[DEBUG] parseOnboardingGoalInput trimmed:', JSON.stringify(trimmed));
   if (!trimmed) {
     return { title: "", description: null };
   }

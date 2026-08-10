@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import type { IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueWorkProduct } from "../../lib/paperclip-shared/src";
 import {
   formatBytes,
   getIssueOutputs,

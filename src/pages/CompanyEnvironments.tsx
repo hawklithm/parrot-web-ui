@@ -16,7 +16,7 @@ import {
   type EnvironmentProbeResult,
   type EnvironmentCustomImageSetupSession,
   type JsonSchema,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   environmentsApi,
   type EnvironmentCustomImageConnectionPayload,

@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import type { AdapterExecutionContext, AdapterExecutionResult } from "@paperclipai/adapter-utils";
+import type { AdapterExecutionContext, AdapterExecutionResult } from "../../../../lib/paperclip-adapter-utils/src";
 import {
   adapterExecutionTargetSessionIdentity,
   formatAdapterExecutionTimeoutErrorMessage,
@@ -13,7 +13,7 @@ import {
   readAdapterExecutionTarget,
   resolveAdapterExecutionTargetTimeout,
   type AdapterExecutionTargetTimeoutResolution,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "../../../../lib/paperclip-adapter-utils/src/execution-target";
 import {
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   applyPaperclipWorkspaceEnv,
@@ -38,8 +38,8 @@ import {
   shapePaperclipWorkspaceEnvForExecution,
   stringifyPaperclipWakePayload,
   type PaperclipSkillEntry,
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
+} from "../../../../lib/paperclip-adapter-utils/src/server-utils";
+import { shellQuote } from "../../../../lib/paperclip-adapter-utils/src/ssh";
 import {
   createAcpRuntime,
   createAgentRegistry,

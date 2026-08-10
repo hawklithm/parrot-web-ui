@@ -1,7 +1,7 @@
 import type { UIAdapterModule } from "../types";
-import { parseGeminiStdoutLine } from "@paperclipai/adapter-gemini-local/ui";
+import { parseGeminiStdoutLine } from "../../lib/adapters-ui/gemini-local";
 import { GeminiLocalConfigFields } from "./config-fields";
-import { buildGeminiLocalConfig } from "@paperclipai/adapter-gemini-local/ui";
+import { buildGeminiLocalConfig } from "../../lib/adapters-ui/gemini-local";
 
 export const geminiLocalUIAdapter: UIAdapterModule = {
   type: "gemini_local",

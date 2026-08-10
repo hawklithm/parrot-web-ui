@@ -3,7 +3,7 @@ import type {
   ProjectWorkspace,
   WorkspaceOperation,
   WorkspaceRuntimeControlTarget,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { api } from "./client";
 import { sanitizeWorkspaceRuntimeControlTarget } from "./workspace-runtime-control";
 

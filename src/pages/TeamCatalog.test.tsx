@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
   CatalogTeam,
   CatalogTeamImportPreviewResult,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TeamCatalog, parseTeamRoute, teamRoute } from "./TeamCatalog";
 import { TooltipProvider } from "@/components/ui/tooltip";

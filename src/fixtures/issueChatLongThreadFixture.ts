@@ -1,4 +1,4 @@
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "../lib/paperclip-shared/src";
 import type { LiveRunForIssue } from "../api/heartbeats";
 import type {
   IssueChatComment,

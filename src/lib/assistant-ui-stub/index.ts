@@ -22,6 +22,46 @@ export interface Runtime {
   cancel: () => void;
 }
 
+// External Store types
+export interface ExternalStoreAdapter<T = unknown> {
+  isRunning: boolean;
+  messages: readonly ThreadMessage[];
+  onNew?: (message: AppendMessage) => Promise<void>;
+  onEdit?: (message: AppendMessage) => Promise<void>;
+  onReload?: (parentId: string | null) => Promise<void>;
+  onCancel?: () => Promise<void>;
+  convertMessage?: (message: T) => ThreadMessage;
+}
+
+export interface AppendMessage {
+  parentId: string | null;
+  role: "user" | "assistant";
+  content: Array<{ type: string; text?: string; [key: string]: unknown }>;
+}
+
+export interface TextMessagePart {
+  type: "text";
+  text: string;
+}
+
+export interface ToolCallMessagePart {
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  result?: unknown;
+}
+
+export interface ReasoningMessagePart {
+  type: "reasoning";
+  reasoning: string;
+}
+
+export type ThreadAssistantMessage = Message & { role: "assistant" };
+export type ThreadUserMessage = Message & { role: "user" };
+export type ThreadSystemMessage = Message & { role: "system" };
+
+
 // Context
 const RuntimeContext = createContext<Runtime | null>(null);
 
@@ -32,6 +72,33 @@ export function useRuntime() {
     throw new Error("useRuntime must be used within RuntimeProvider");
   }
   return runtime;
+}
+
+// External Store Runtime Hook
+export function useExternalStoreRuntime(adapter: ExternalStoreAdapter): Runtime {
+  return {
+    thread: {
+      messages: adapter.messages as Message[],
+      isRunning: adapter.isRunning,
+    },
+    send: async (message: AppendMessage) => {
+      if (adapter.onNew) {
+        await adapter.onNew(message);
+      }
+    },
+    cancel: adapter.onCancel || (() => Promise.resolve()),
+  };
+}
+
+// AssistantRuntimeProvider alias
+export const AssistantRuntimeProvider = RuntimeProvider;
+
+// useAui hook
+export function useAui() {
+  return {
+    runtime: useRuntime(),
+    thread: useThread(),
+  };
 }
 
 export function useThread() {

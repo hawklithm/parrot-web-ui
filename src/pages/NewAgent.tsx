@@ -9,7 +9,7 @@ import { issuesApi } from "../api/issues";
 import { projectsApi } from "../api/projects";
 import { queryKeys } from "../lib/queryKeys";
 import { resolveSkillSummaryText } from "../lib/company-skill-summary";
-import { AGENT_ROLES, type AdapterEnvironmentTestResult, type AgentPermissions } from "@paperclipai/shared";
+import { AGENT_ROLES, type AdapterEnvironmentTestResult, type AgentPermissions } from "../lib/paperclip-shared/src";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -33,10 +33,13 @@ import { ReportsToPicker } from "../components/ReportsToPicker";
 import { buildNewAgentHirePayload } from "../lib/new-agent-hire-payload";
 import { TrustPresetSection } from "../components/TrustPresetSection";
 import { buildPermissionsForTrustPreset, getTrustPreset } from "../lib/trust-policy-ui";
-import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@paperclipai/adapter-opencode-local";
+import {
+  DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
+  DEFAULT_CURSOR_LOCAL_MODEL,
+  DEFAULT_GEMINI_LOCAL_MODEL,
+  DEFAULT_OPENCODE_LOCAL_MODEL,
+  isValidOpenCodeModelId,
+} from "../lib/adapter-constants";
 
 function createValuesForAdapterType(
   adapterType: CreateConfigValues["adapterType"],

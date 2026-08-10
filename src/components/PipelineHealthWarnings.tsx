@@ -1,5 +1,5 @@
 import { AlertTriangle, ChevronRight } from "lucide-react";
-import type { PipelineHealthWarning } from "@paperclipai/shared";
+import type { PipelineHealthWarning } from "../lib/paperclip-shared/src";
 import { Link } from "@/lib/router";
 import { cn } from "../lib/utils";
 

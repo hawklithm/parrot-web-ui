@@ -1,4 +1,4 @@
-import type { FinanceEvent } from "@paperclipai/shared";
+import type { FinanceEvent } from "../lib/paperclip-shared/src";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {

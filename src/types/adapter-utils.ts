@@ -1,5 +1,5 @@
 // Adapter utility types
-// This file provides type definitions to replace @paperclipai/adapter-utils
+// This file provides type definitions to replace parrot-adapter-utils
 
 export interface AdapterEnvironmentCheck {
   name: string;

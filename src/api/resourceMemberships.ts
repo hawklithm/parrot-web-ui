@@ -2,7 +2,7 @@ import type {
   ResourceMemberships,
   ResourceMembershipUpdateResult,
   UpdateResourceMembership,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export const resourceMembershipsApi = {

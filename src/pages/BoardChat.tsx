@@ -31,7 +31,7 @@ import {
 } from "../components/AgentBubbleActionRow";
 import { AgentIcon } from "../components/AgentIconPicker";
 import { cn, formatDateTime } from "../lib/utils";
-import type { FeedbackVoteValue } from "@paperclipai/shared";
+import type { FeedbackVoteValue } from "../lib/paperclip-shared/src";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 /**

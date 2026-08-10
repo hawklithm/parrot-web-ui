@@ -8,7 +8,7 @@ import type {
   CostWindowSpendRow,
   FinanceEvent,
   QuotaWindow,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronRight, Coins, DollarSign, ReceiptText } from "lucide-react";
 import { budgetsApi } from "../api/budgets";
 import { costsApi } from "../api/costs";

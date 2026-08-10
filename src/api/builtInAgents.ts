@@ -1,4 +1,4 @@
-import type { Agent, Approval } from "@paperclipai/shared";
+import type { Agent, Approval } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 /**

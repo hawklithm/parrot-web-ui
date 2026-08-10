@@ -3,7 +3,7 @@ import type {
   IssueBlockedInboxAttention,
   IssueBlockedInboxReason,
   IssueBlockedInboxSeverity,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 
 export type BlockedReasonVariant =
   | "needs_decision"

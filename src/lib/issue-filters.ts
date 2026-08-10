@@ -1,4 +1,4 @@
-import type { ExternalObjectSummary, Issue } from "@paperclipai/shared";
+import type { ExternalObjectSummary, Issue } from "../lib/paperclip-shared/src";
 
 export type IssueFilterWorkspaceLookup = {
   mode?: string | null;

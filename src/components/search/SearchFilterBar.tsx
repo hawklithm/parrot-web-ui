@@ -7,7 +7,7 @@ import {
   type CompanySearchFilterOptionCounts,
   type CompanySearchSort,
   type IssueStatus,
-} from "@paperclipai/shared";
+} from "../../lib/paperclip-shared/src";
 import { StatusIcon } from "@/components/StatusIcon";
 import { PriorityIcon } from "@/components/PriorityIcon";
 import { SearchFilterMenu, type FilterMenuOption } from "./SearchFilterMenu";

@@ -44,7 +44,7 @@ import {
   type ProjectSidebarSortMode,
   writeProjectSortMode,
 } from "../lib/project-order";
-import type { Project } from "@paperclipai/shared";
+import type { Project } from "../lib/paperclip-shared/src";
 
 type ProjectSidebarSlot = ReturnType<typeof usePluginSlots>["slots"][number];
 

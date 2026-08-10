@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AdapterConfigSchema, ConfigFieldSchema } from "@paperclipai/adapter-utils";
+import type { AdapterConfigSchema, ConfigFieldSchema } from "../lib/paperclip-adapter-utils/src";
 import { fieldMatchesVisibleWhen } from "./schema-config-fields";
 
 const sourceField: ConfigFieldSchema = {

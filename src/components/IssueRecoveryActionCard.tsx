@@ -6,7 +6,7 @@ import type {
   IssueRecoveryActionKind,
   IssueRecoveryActionOutcome,
   IssueRecoveryActionStatus,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   Eye,
   GitBranch,

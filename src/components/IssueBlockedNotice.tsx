@@ -4,7 +4,7 @@ import type {
   IssueRelationIssueSummary,
   IssueScheduledRetry,
   SuccessfulRunHandoffState,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Circle, Flag, Loader2, RotateCcw } from "lucide-react";
 import { Link } from "@/lib/router";

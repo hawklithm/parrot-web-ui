@@ -1,4 +1,4 @@
-import type { PipelineCaseLiveness } from "@paperclipai/shared";
+import type { PipelineCaseLiveness } from "../lib/paperclip-shared/src";
 
 /**
  * Visual tone for a pipeline item liveness banner. Each tone maps to a palette

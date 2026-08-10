@@ -1,4 +1,4 @@
-import type { Environment, InstanceExecutionMode } from "@paperclipai/shared";
+import type { Environment, InstanceExecutionMode } from "../lib/paperclip-shared/src";
 
 /**
  * Provider key (== plugin driverKey) of the first-party Kubernetes sandbox

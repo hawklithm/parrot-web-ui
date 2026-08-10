@@ -6,7 +6,7 @@ import {
   isFrontmatterPlainRecord,
   parseFrontmatterFields,
   stringifyFrontmatter,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { AlertTriangle, ChevronDown, ChevronRight, Info, Plus, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

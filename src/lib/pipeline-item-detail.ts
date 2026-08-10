@@ -1,4 +1,4 @@
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "../lib/paperclip-shared/src";
 import type {
   PipelineCase,
   PipelineCaseActiveWork,

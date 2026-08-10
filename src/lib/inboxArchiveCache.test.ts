@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "../lib/paperclip-shared/src";
 import { describe, expect, it } from "vitest";
 import {
   removeIssueFromInboxCaches,

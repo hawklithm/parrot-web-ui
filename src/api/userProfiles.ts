@@ -1,4 +1,4 @@
-import type { UserProfileResponse } from "@paperclipai/shared";
+import type { UserProfileResponse } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export const userProfilesApi = {

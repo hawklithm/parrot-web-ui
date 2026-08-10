@@ -18,8 +18,8 @@ import {
   type CaseSummary,
 } from "@/api/cases";
 import { issuesApi } from "@/api/issues";
-import type { IssueDocument } from "@paperclipai/shared";
-import { PROJECT_COLORS, type IssueLabel } from "@paperclipai/shared";
+import type { IssueDocument } from "../lib/paperclip-shared/src";
+import { PROJECT_COLORS, type IssueLabel } from "../lib/paperclip-shared/src";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

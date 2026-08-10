@@ -56,7 +56,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "../lib/paperclip-shared/src";
 
 /**
  * When no agent is running, the sidebar falls back to showing at most this many

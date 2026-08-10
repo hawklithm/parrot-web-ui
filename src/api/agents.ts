@@ -16,12 +16,12 @@ import type {
   AgentConfigRevision,
   ClearAgentErrorResponse,
   AgentApiKeyScope,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import type {
   AdapterModelProfileDefinition,
   AdapterModelProfileKey,
-} from "@paperclipai/adapter-utils";
-import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "../lib/paperclip-adapter-utils/src";
+import { isUuidLike, normalizeAgentUrlKey } from "../lib/paperclip-shared/src";
 import { ApiError, api } from "./client";
 
 export interface AgentKey {

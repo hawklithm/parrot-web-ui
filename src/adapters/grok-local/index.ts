@@ -1,6 +1,6 @@
 import type { UIAdapterModule } from "../types";
-import { createGrokStdoutParser, parseGrokStdoutLine } from "@paperclipai/adapter-grok-local/ui";
-import { buildGrokLocalConfig } from "@paperclipai/adapter-grok-local/ui";
+import { createGrokStdoutParser, parseGrokStdoutLine } from "../../lib/adapters-ui/grok-local";
+import { buildGrokLocalConfig } from "../../lib/adapters-ui/grok-local";
 import { GrokLocalConfigFields } from "./config-fields";
 
 export const grokLocalUIAdapter: UIAdapterModule = {

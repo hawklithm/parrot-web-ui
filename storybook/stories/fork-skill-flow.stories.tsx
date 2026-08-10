@@ -7,7 +7,7 @@ import type {
   CompanySkillForkPrecheckResult,
   CompanySkillForkSummary,
   CompanySkillUsageAgent,
-} from "@paperclipai/shared";
+} from "../../src/lib/paperclip-shared/src";
 import { ForkSkillDialog } from "@/components/skill-studio/ForkSkillDialog";
 import {
   ProjectScanNotice,

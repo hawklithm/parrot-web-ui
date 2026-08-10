@@ -2,7 +2,7 @@ import type {
   IssueCommentMetadata,
   IssueCommentMetadataRow,
   IssueCommentPresentation,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import type {
   SystemNoticeMetadataRow,
   SystemNoticeMetadataSection,

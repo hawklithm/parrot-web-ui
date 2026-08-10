@@ -4,7 +4,7 @@ import type {
   CompanySearchResult,
   CompanySearchResponse,
   CompanySearchZeroResults,
-} from "@paperclipai/shared";
+} from "../../src/lib/paperclip-shared/src";
 import { Badge } from "@/components/ui/badge";
 import { IssueGroupHeader } from "@/components/IssueGroupHeader";
 import { Input } from "@/components/ui/input";

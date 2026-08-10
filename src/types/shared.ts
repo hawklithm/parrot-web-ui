@@ -1,4 +1,4 @@
-// Shared types from @paperclipai/shared
+// Shared types from parrot-shared
 // This file provides type definitions to replace the workspace dependency
 
 export type AgentAdapterType = string;

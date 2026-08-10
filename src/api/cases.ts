@@ -1,4 +1,4 @@
-import type { DocumentRevision, IssueDocument, IssueLabel } from "@paperclipai/shared";
+import type { DocumentRevision, IssueDocument, IssueLabel } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 // -----------------------------------------------------------------------------

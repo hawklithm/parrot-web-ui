@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { HeartbeatRun } from "@paperclipai/shared";
+import type { HeartbeatRun } from "../lib/paperclip-shared/src";
 import { useNavigate } from "@/lib/router";
 import { issuesApi } from "../api/issues";
 import { executionWorkspacesApi } from "../api/execution-workspaces";

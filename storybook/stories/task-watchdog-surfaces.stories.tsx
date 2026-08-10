@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { Issue, IssueWatchdogSummary } from "@paperclipai/shared";
+import type { Issue, IssueWatchdogSummary } from "../../src/lib/paperclip-shared/src";
 import { IssueProperties } from "@/components/IssueProperties";
 import {
   storybookExecutionWorkspaces,

@@ -1,4 +1,4 @@
-import type { IssueExecutionPolicy, IssueExecutionStageParticipant, IssueExecutionStagePrincipal } from "@paperclipai/shared";
+import type { IssueExecutionPolicy, IssueExecutionStageParticipant, IssueExecutionStagePrincipal } from "../lib/paperclip-shared/src";
 import { parseAssigneeValue } from "./assignees";
 
 type StageType = "review" | "approval";

@@ -1,4 +1,4 @@
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import type { DeploymentExposure, DeploymentMode } from "../../lib/paperclip-shared/src";
 import { Badge } from "@/components/ui/badge";
 
 export function ModeBadge({

@@ -9,7 +9,7 @@ import type {
   CompanySkillDetail,
   CompanySkillUsageAgent,
   CompanySkillVersion,
-} from "@paperclipai/shared";
+} from "../../lib/paperclip-shared/src";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AgentsUsingSkillBadge,

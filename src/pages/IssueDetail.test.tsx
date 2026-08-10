@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Agent, Issue, IssueAttachment, IssueComment, IssueTreeControlPreview, IssueTreeHold, IssueWorkProduct } from "@paperclipai/shared";
+import type { Agent, Issue, IssueAttachment, IssueComment, IssueTreeControlPreview, IssueTreeHold, IssueWorkProduct } from "../lib/paperclip-shared/src";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 import { NavigationType } from "react-router-dom";
 import { flushSync } from "react-dom";

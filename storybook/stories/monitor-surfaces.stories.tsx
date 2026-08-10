@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "../../src/lib/paperclip-shared/src";
 import { IssueMonitorActivityCard } from "@/components/IssueMonitorActivityCard";
 import { IssueProperties } from "@/components/IssueProperties";
 import {

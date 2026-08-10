@@ -1,4 +1,4 @@
-import type { Goal, Project } from "@paperclipai/shared";
+import type { Goal, Project } from "../lib/paperclip-shared/src";
 
 export const ONBOARDING_PROJECT_NAME = "Onboarding";
 

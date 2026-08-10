@@ -1,4 +1,4 @@
-import type { CompanySearchResponse, CompanySearchScope, CompanySearchSort, IssuePriority, IssueStatus } from "@paperclipai/shared";
+import type { CompanySearchResponse, CompanySearchScope, CompanySearchSort, IssuePriority, IssueStatus } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export interface CompanySearchParams {

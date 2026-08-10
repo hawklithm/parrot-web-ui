@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "../lib/paperclip-shared/src";
 import {
   IssueChatThread,
   VIRTUALIZED_THREAD_ROW_THRESHOLD,

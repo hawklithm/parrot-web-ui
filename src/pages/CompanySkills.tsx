@@ -20,7 +20,7 @@ import type {
   CompanySkillUpdateRequest,
   CompanySkillUpdateStatus,
   CompanySkillVersion,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { companySkillsApi } from "../api/companySkills";
 import { agentsApi } from "../api/agents";
 import { useCompany } from "../context/CompanyContext";

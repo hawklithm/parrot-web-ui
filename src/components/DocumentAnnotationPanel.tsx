@@ -4,7 +4,7 @@ import type {
   DocumentAnnotationComment,
   DocumentAnnotationThreadStatus,
   DocumentAnnotationThreadWithComments,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   Check,
   Copy,
@@ -30,7 +30,7 @@ import { AgentIcon } from "./AgentIconPicker";
 import { deriveInitials } from "./Identity";
 import { MarkdownBody } from "./MarkdownBody";
 import type { PendingAnchor } from "./DocumentAnnotationLayer";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "../lib/paperclip-shared/src";
 import type { CompanyUserProfile } from "@/lib/company-members";
 
 export interface AnnotationPanelProps {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseCursorStdoutLine } from "@paperclipai/adapter-cursor-local/ui";
-import { parseCursorCloudStdoutLine } from "@paperclipai/adapter-cursor-cloud/ui";
+import { parseCursorStdoutLine } from "../lib/adapters-ui/cursor-local";
+import { parseCursorCloudStdoutLine } from "../lib/adapters-ui/cursor-cloud";
 import { buildTranscript, type RunLogChunk } from "./transcript";
 
 const ts = "2026-06-23T12:00:00.000Z";

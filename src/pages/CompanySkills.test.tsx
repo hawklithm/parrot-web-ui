@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import type { CompanySkillDetail, CompanySkillVersion } from "@paperclipai/shared";
+import type { CompanySkillDetail, CompanySkillVersion } from "../lib/paperclip-shared/src";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DiscoveryGrid, SkillDetailPage, getSkillVersionDiffSelection } from "./CompanySkills";
 import { skillStudioNewRoute } from "../lib/company-skill-routes";

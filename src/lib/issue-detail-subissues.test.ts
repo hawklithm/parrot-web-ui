@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "../lib/paperclip-shared/src";
 import {
   buildIssueSiblingNavigation,
   buildSubIssueProgressSummary,

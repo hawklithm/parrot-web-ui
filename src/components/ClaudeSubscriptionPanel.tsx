@@ -1,4 +1,4 @@
-import type { QuotaWindow } from "@paperclipai/shared";
+import type { QuotaWindow } from "../lib/paperclip-shared/src";
 import { cn, quotaSourceDisplayName } from "@/lib/utils";
 
 interface ClaudeSubscriptionPanelProps {

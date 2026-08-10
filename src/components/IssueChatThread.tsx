@@ -42,7 +42,7 @@ import type {
   IssueScheduledRetry,
   SuccessfulRunHandoffState,
   IssueWorkMode,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { usePaperclipIssueRuntime, type PaperclipIssueRuntimeReassignment } from "../hooks/usePaperclipIssueRuntime";
@@ -151,7 +151,7 @@ import type {
   IssueCommentMetadata,
   IssueCommentPresentation,
   SourceTrustMetadata,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   describeToolInput,
   displayToolName,
@@ -161,7 +161,7 @@ import {
   summarizeToolInput,
   summarizeToolResult,
 } from "../lib/transcriptPresentation";
-import { buildAgentMentionHref } from "@paperclipai/shared";
+import { buildAgentMentionHref } from "../lib/paperclip-shared/src";
 import { cn, formatDateTime, formatShortDate } from "../lib/utils";
 import { brandChipBadge } from "../lib/status-colors";
 import { nextWorkMode, titleForPendingWorkMode, workModeMetaFor, workModeMetaList } from "../lib/work-mode-meta";

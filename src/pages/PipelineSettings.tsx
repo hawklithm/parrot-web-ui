@@ -12,7 +12,7 @@ import {
   type IssueExecutionWorkspaceSettings,
   type RoutineEnvConfig,
   type RoutineVariable,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   Activity as ActivityIcon,
   AlertTriangle,

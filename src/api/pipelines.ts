@@ -10,10 +10,10 @@ import type {
   PipelineCaseOutputsResponse,
   PipelineHealthReport,
   RoutineEnvConfig,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
-export type { PipelineHealthReport, PipelineHealthWarning } from "@paperclipai/shared";
+export type { PipelineHealthReport, PipelineHealthWarning } from "../lib/paperclip-shared/src";
 
 export type PipelineConnectionRef =
   | string

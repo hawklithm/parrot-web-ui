@@ -25,7 +25,7 @@ import type {
   ReleaseIssueTreeHold,
   UpsertIssueWatchdog,
   UpsertIssueDocument,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { api, type RequestOptions } from "./client";
 
 export type IssueUpdateResponse = Issue & {

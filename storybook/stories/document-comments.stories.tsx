@@ -5,7 +5,7 @@ import type {
   DocumentAnnotationThreadWithComments,
   DocumentAnnotationThreadStatus,
   DocumentAnnotationAnchorState,
-} from "@paperclipai/shared";
+} from "../../src/lib/paperclip-shared/src";
 import { DocumentAnnotationPanel } from "@/components/DocumentAnnotationPanel";
 import type { PendingAnchor } from "@/components/DocumentAnnotationLayer";
 import type { CompanyUserProfile } from "@/lib/company-members";

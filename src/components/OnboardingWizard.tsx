@@ -1,15 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AdapterEnvironmentTestResult } from "@paperclipai/shared";
+import type { AdapterEnvironmentTestResult } from "../lib/paperclip-shared/src";
 import { useLocation, useNavigate, useParams } from "@/lib/router";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
 import { companiesApi } from "../api/companies";
+import type { CompanyListResult } from "../api/companies-query";
 import { goalsApi } from "../api/goals";
 import { agentsApi } from "../api/agents";
 import { approvalsApi } from "../api/approvals";
 import { issuesApi } from "../api/issues";
+import { heartbeatsApi } from "../api/heartbeats";
 import { projectsApi } from "../api/projects";
+import { accessApi } from "../api/access";
 import { queryKeys } from "../lib/queryKeys";
 import { Dialog, DialogPortal } from "@/components/ui/dialog";
 import {
@@ -39,13 +42,18 @@ import {
   selectReusableOnboardingProject,
 } from "../lib/onboarding-launch";
 import { buildNewAgentRuntimeConfig } from "../lib/new-agent-runtime-config";
-import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@paperclipai/adapter-opencode-local";
+import {
+  DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
+  DEFAULT_CURSOR_LOCAL_MODEL,
+  DEFAULT_GEMINI_LOCAL_MODEL,
+  DEFAULT_OPENCODE_LOCAL_MODEL,
+  isValidOpenCodeModelId
+} from "../lib/adapter-constants";
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
 import { FrontDoor } from "./FrontDoor";
+import { OnboardingChat } from "./OnboardingChat";
+import { MarkdownBody } from "./MarkdownBody";
 import { AgentCapsule } from "./AgentCapsule";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -56,6 +64,7 @@ import {
   ArrowRight,
   Sparkles,
   Check,
+  CheckCircle2,
   Loader2,
   ChevronDown,
   X
@@ -136,8 +145,8 @@ export function OnboardingWizard() {
   const initialStep = effectiveOnboardingOptions.initialStep ?? 0;
   const existingCompanyId = effectiveOnboardingOptions.companyId;
 
-  // Restore saved state from localStorage (read once on mount)
   const saved = useMemo(loadSavedState, []);
+  const [companyCreatedAt, setCompanyCreatedAt] = useState<number | null>((saved?.companyCreatedAt as number | null) ?? null);
 
   const [step, setStep] = useState<Step>((saved?.step as Step) ?? initialStep);
   const [onboardingPath, setOnboardingPath] = useState<"create" | "grow" | null>((saved?.onboardingPath as "create" | "grow" | null) ?? null);
@@ -196,6 +205,15 @@ export function OnboardingWizard() {
   const [createdIssueRef, setCreatedIssueRef] = useState<string | null>(
     (saved?.createdIssueRef as string) ?? null
   );
+  
+  // Step 5: Hiring plan and team creation
+  const [hiringPlanMarkdown, setHiringPlanMarkdown] = useState<string | null>(null);
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [teamCreationProgress, setTeamCreationProgress] = useState<{
+    current: number;
+    total: number;
+    currentRole: string;
+  } | null>(null);
 
   // Reset the route-dismissed flag when navigating to a different path.
   useEffect(() => {
@@ -227,6 +245,31 @@ export function OnboardingWizard() {
     if (company) setCreatedCompanyPrefix(company.issuePrefix);
   }, [effectiveOnboardingOpen, createdCompanyId, createdCompanyPrefix, companies]);
 
+  // Validate createdCompanyId from localStorage — clear if it doesn't exist
+  // BUT: Skip validation for recently created companies to avoid race condition
+  useEffect(() => {
+    if (!effectiveOnboardingOpen || !createdCompanyId || companiesLoading) return;
+    
+    // Protection: Don't validate companies created in the last 10 seconds
+    // This prevents clearing the ID before the companies list refreshes
+    if (companyCreatedAt && Date.now() - companyCreatedAt < 10000) {
+      return;
+    }
+    
+    // If we have a createdCompanyId but it's not in the companies list, it's stale
+    const companyExists = companies.some((c) => c.id === createdCompanyId);
+    if (!companyExists && companies.length > 0) {
+      console.warn(`[Onboarding] Clearing stale createdCompanyId: ${createdCompanyId}`);
+      setCreatedCompanyId(null);
+      setCreatedCompanyPrefix(null);
+      setCreatedAgentId(null);
+      setCreatedCompanyGoalId(null);
+      setCreatedProjectId(null);
+      setCreatedIssueRef(null);
+      setCompanyCreatedAt(null);
+    }
+  }, [effectiveOnboardingOpen, createdCompanyId, companies, companiesLoading, companyCreatedAt]);
+
   // Persist wizard state to localStorage on every change
   useEffect(() => {
     if (!effectiveOnboardingOpen) return;
@@ -236,6 +279,7 @@ export function OnboardingWizard() {
       createdCompanyId, createdCompanyPrefix, createdAgentId,
       createdCompanyGoalId, createdProjectId, createdIssueRef,
       onboardingPath, growWorkflows, growPainPoints, growAutomate,
+      companyCreatedAt,
     };
     localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(state));
   }, [
@@ -244,6 +288,7 @@ export function OnboardingWizard() {
     createdCompanyId, createdCompanyPrefix, createdAgentId,
     createdCompanyGoalId, createdProjectId, createdIssueRef,
     onboardingPath, growWorkflows, growPainPoints, growAutomate,
+    companyCreatedAt,
   ]);
 
   const {
@@ -259,7 +304,13 @@ export function OnboardingWizard() {
       : ["agents", "none", "adapter-models", adapterType, null],
     queryFn: () => agentsApi.adapterModels(createdCompanyId!, adapterType, { environmentId: null }),
     // Models are picked on step 4 (Connect a model).
-    enabled: Boolean(createdCompanyId) && effectiveOnboardingOpen && step === 4
+    // Only enable if createdCompanyId exists AND is valid (or companies are still loading).
+    enabled: 
+      Boolean(createdCompanyId) && 
+      effectiveOnboardingOpen && 
+      step === 4 &&
+      // Don't run the query if companies loaded and this company doesn't exist
+      (companiesLoading || companies.some((c) => c.id === createdCompanyId))
   });
   const getCapabilities = useAdapterCapabilities();
   const adapterCaps = getCapabilities(adapterType);
@@ -392,6 +443,7 @@ export function OnboardingWizard() {
     setCreatedCompanyGoalId(null);
     setCreatedProjectId(null);
     setCreatedIssueRef(null);
+    setCompanyCreatedAt(null);
   }
 
   function handleClose() {
@@ -402,6 +454,152 @@ export function OnboardingWizard() {
     // effectiveOnboardingOpen stays true and the wizard re-renders instead of
     // handing off to the launcher card (PAP-52).
     setRouteDismissed(true);
+  }
+
+  /**
+   * Parse a hiring plan markdown and extract role definitions.
+   * Expected format from ceo-instructions.ts:
+   * ## 1. {Role Name}
+   * ### Summary
+   * ### Expertise & Responsibilities
+   * ### Priorities
+   * ### Boundaries
+   * ### Tools & Permissions
+   * ### Communication
+   * ### Collaboration & Escalation
+   */
+  function parseHiringPlan(markdown: string): Array<{
+    name: string;
+    summary: string;
+    fullDescription: string;
+  }> {
+    const roles: Array<{ name: string; summary: string; fullDescription: string }> = [];
+    
+    // Split by ## headers (role definitions)
+    const roleBlocks = markdown.split(/\n##\s+\d+\.\s+/);
+    
+    for (let i = 1; i < roleBlocks.length; i++) {
+      const block = roleBlocks[i].trim();
+      if (!block) continue;
+      
+      // Extract role name (first line before ###)
+      const nameMatch = block.match(/^([^\n#]+)/);
+      if (!nameMatch) continue;
+      const name = nameMatch[1].trim();
+      
+      // Extract summary section
+      const summaryMatch = block.match(/###\s*Summary\s*\n([^#]+)/i);
+      const summary = summaryMatch ? summaryMatch[1].trim() : "";
+      
+      roles.push({
+        name,
+        summary,
+        fullDescription: block
+      });
+    }
+    
+    return roles;
+  }
+
+  /**
+   * Create team members based on the hiring plan.
+   */
+  async function handleCreateTeam() {
+    if (!createdCompanyId || !hiringPlanMarkdown) {
+      return;
+    }
+    
+    setCreatingTeam(true);
+    setError(null);
+    
+    try {
+      const roles = parseHiringPlan(hiringPlanMarkdown);
+      
+      if (roles.length === 0) {
+        setError("No roles found in the hiring plan. Please review the plan format.");
+        return;
+      }
+      
+      setTeamCreationProgress({
+        current: 0,
+        total: roles.length,
+        currentRole: roles[0].name
+      });
+      
+      // Create each agent sequentially
+      for (let i = 0; i < roles.length; i++) {
+        const role = roles[i];
+        
+        setTeamCreationProgress({
+          current: i,
+          total: roles.length,
+          currentRole: role.name
+        });
+        
+        try {
+          const hire = await agentsApi.hire(createdCompanyId, {
+            name: role.name,
+            role: "engineer", // Default role, can be customized
+            adapterType,
+            adapterConfig: buildAdapterConfig(),
+            runtimeConfig: buildNewAgentRuntimeConfig()
+          });
+          
+          // Auto-approve if needed
+          if (hire.approval) {
+            await approvalsApi.approve(
+              hire.approval.id,
+              `Auto-approved during onboarding team creation: ${role.name}`
+            );
+          }
+          
+          // Seed agent instructions with role description
+          try {
+            const bundle = await agentsApi.instructionsBundle(
+              hire.agent.id,
+              createdCompanyId
+            );
+            await agentsApi.saveInstructionsFile(
+              hire.agent.id,
+              {
+                path: bundle.entryFile,
+                content: `# Role: ${role.name}\n\n${role.summary}\n\n## Detailed Description\n\n${role.fullDescription}`
+              },
+              createdCompanyId
+            );
+          } catch (err) {
+            console.warn(`Failed to seed instructions for ${role.name}:`, err);
+          }
+        } catch (err) {
+          console.error(`Failed to create agent ${role.name}:`, err);
+          // Continue with other agents even if one fails
+        }
+      }
+      
+      // Invalidate agents cache to show all new team members
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.list(createdCompanyId)
+      });
+      
+      // All done, proceed to dashboard
+      setTeamCreationProgress({
+        current: roles.length,
+        total: roles.length,
+        currentRole: "Complete"
+      });
+      
+      // Small delay to show completion state
+      await new Promise<void>(resolve => setTimeout(resolve, 500));
+      
+      // Now launch to dashboard
+      await handleLaunchToDashboard();
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create team");
+    } finally {
+      setCreatingTeam(false);
+      setTeamCreationProgress(null);
+    }
   }
 
   async function handleLaunchToDashboard() {
@@ -536,8 +734,13 @@ export function OnboardingWizard() {
 
   // Step 2 → 3 ("Confirm mission"): create the company + its company-level
   // goal, then advance to naming the team lead. Guarded so revisiting the
-  // mission step (e.g. via Back) doesn't create a duplicate company.
+  // mission step doesn't re-create the company.
   async function handleConfirmMission() {
+    console.log('[DEBUG] handleConfirmMission called', JSON.stringify({ companyName, companyGoal }));
+    if (!companyName.trim() || !companyGoal.trim()) {
+      console.log('[DEBUG] Guard condition failed - empty name or goal');
+      return;
+    }
     if (createdCompanyId) {
       setStep(3);
       return;
@@ -545,21 +748,35 @@ export function OnboardingWizard() {
     setLoading(true);
     setError(null);
     try {
+
       const company = await companiesApi.create({ name: companyName.trim() });
       setCreatedCompanyId(company.id);
       setCreatedCompanyPrefix(company.issuePrefix);
       setSelectedCompanyId(company.id);
+      setCompanyCreatedAt(Date.now());
+      
+      // Optimistic update: immediately add to cache to prevent race condition
+      queryClient.setQueryData(queryKeys.companies.all, (old: CompanyListResult | undefined) => {
+        const existingCompanies = old?.companies || [];
+        return { companies: [...existingCompanies, company], unauthorized: false };
+      });
+      
+      // Background refresh
       queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
 
       const parsedGoal = parseOnboardingGoalInput(companyGoal);
-      const goal = await goalsApi.create(company.id, {
+      console.log('[DEBUG] parsedGoal:', JSON.stringify(parsedGoal));
+      const goalPayload = {
         title: parsedGoal.title,
+        name: parsedGoal.title,  // 添加 name 字段，与 title 保持一致
         ...(parsedGoal.description
           ? { description: parsedGoal.description }
           : {}),
         level: "company",
         status: "active"
-      });
+      } as any;  // 使用 as any 因为 TypeScript 类型定义中没有 name 字段
+      console.log('[DEBUG] goalPayload:', JSON.stringify(goalPayload));
+      const goal = await goalsApi.create(company.id, goalPayload);
       setCreatedCompanyGoalId(goal.id);
       queryClient.invalidateQueries({
         queryKey: queryKeys.goals.list(company.id)
@@ -670,8 +887,56 @@ export function OnboardingWizard() {
         console.warn("Failed to seed CEO instructions:", err);
       }
 
-      // Advance to the Review step — the lead is now online. The user drives
-      // strategy + hiring from the planning chat after "Get started".
+      // Create the onboarding task and auto-start it so CEO can work on hiring plan
+      try {
+        let goalId = createdCompanyGoalId;
+        if (!goalId) {
+          const goals = await goalsApi.list(createdCompanyId);
+          goalId = selectDefaultCompanyGoalId(goals);
+          setCreatedCompanyGoalId(goalId);
+        }
+
+        let projectId = createdProjectId;
+        if (!projectId) {
+          const projects = await projectsApi.list(createdCompanyId);
+          const existingOnboardingProject = selectReusableOnboardingProject(projects);
+          if (existingOnboardingProject) {
+            projectId = existingOnboardingProject.id;
+          } else {
+            const project = await projectsApi.create(
+              createdCompanyId,
+              buildOnboardingProjectPayload(goalId)
+            );
+            projectId = project.id;
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.projects.list(createdCompanyId)
+            });
+          }
+          setCreatedProjectId(projectId);
+        }
+
+        if (!createdIssueRef) {
+          const issue = await issuesApi.create(
+            createdCompanyId,
+            buildOnboardingIssuePayload({
+              title: DEFAULT_TASK_TITLE,
+              description: DEFAULT_TASK_DESCRIPTION,
+              assigneeAgentId: agent.id,
+              projectId,
+              goalId
+            })
+          );
+          setCreatedIssueRef(issue.identifier ?? issue.id);
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.issues.list(createdCompanyId)
+          });
+          // Task is auto-started when created with an assignee
+        }
+      } catch (err) {
+        console.warn("Failed to create or start onboarding task:", err);
+      }
+
+      // Advance to Step 5 - show OnboardingChat where CEO will work on hiring plan
       setStep(5);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create agent");
@@ -1582,43 +1847,82 @@ export function OnboardingWizard() {
                 </div>
               )}
 
-              {/* Step 5: Review — lead is online (shared capsule above) */}
-              {step === 5 && (
-                <div className="space-y-5 py-1">
-                  {/* Review checklist — everything that's now set up */}
-                  <div className="space-y-1.5">
-                    {[
-                      { label: "Company name", done: Boolean(companyName.trim()) },
-                      { label: "Mission", done: Boolean(companyGoal.trim()) },
-                      { label: "Agent created", done: Boolean(createdAgentId) },
-                      { label: "Model connected", done: Boolean(createdAgentId) },
-                    ].map(({ label, done }) => (
-                      <div key={label} className="flex items-center gap-2 text-sm">
-                        <span
-                          className={cn(
-                            "flex h-4 w-4 items-center justify-center rounded-full shrink-0",
-                            done
-                              ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                              : "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          <Check className="h-2.5 w-2.5" />
-                        </span>
-                        <span className={done ? "text-foreground" : "text-muted-foreground"}>
-                          {label}
-                        </span>
+              {/* Step 5: CEO works on hiring plan in OnboardingChat */}
+              {step === 5 && createdCompanyId && createdAgentId && createdIssueRef && (
+                <div className="space-y-5">
+                  {!hiringPlanMarkdown && !creatingTeam && (
+                    <div className="space-y-3">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-base font-medium">{agentName} is building your team</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Your CEO is analyzing {companyName}'s mission and creating a hiring plan.
+                        </p>
                       </div>
-                    ))}
-                  </div>
-
-                  {companyGoal.trim() && (
-                    <p className="text-sm text-muted-foreground italic text-center">
-                      "{companyGoal}"
-                    </p>
+                      
+                      <OnboardingChat
+                        taskId={createdIssueRef}
+                        agentId={createdAgentId}
+                        agentName={agentName}
+                        companyName={companyName}
+                        companyGoal={companyGoal}
+                        onPlanDetected={(planMarkdown) => {
+                          setHiringPlanMarkdown(planMarkdown);
+                        }}
+                        onReviewPlan={() => {
+                          // Plan detected, button shown in OnboardingChat
+                          // We'll show our own "Create team" button below
+                        }}
+                      />
+                    </div>
                   )}
-                  <p className="text-xs text-muted-foreground text-center">
-                    We'll create the first task for {agentName} and take you to the dashboard.
-                  </p>
+                  
+                  {hiringPlanMarkdown && !creatingTeam && (
+                    <div className="space-y-4">
+                      <div className="text-center space-y-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          <h3 className="text-base font-medium">Hiring plan ready</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {agentName} has created a team structure. Review the roles below.
+                        </p>
+                      </div>
+                      
+                      <div className="max-h-60 overflow-y-auto border border-border rounded-md p-4 bg-muted/30">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <MarkdownBody>{hiringPlanMarkdown}</MarkdownBody>
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground text-center">
+                        Click below to create these team members and start working.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {creatingTeam && teamCreationProgress && (
+                    <div className="space-y-4 text-center">
+                      <div className="space-y-2">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                        <h3 className="text-base font-medium">Creating your team</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {teamCreationProgress.current} of {teamCreationProgress.total} agents created
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Current: {teamCreationProgress.currentRole}
+                        </p>
+                      </div>
+                      
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-primary h-full transition-all duration-300"
+                          style={{
+                            width: `${(teamCreationProgress.current / teamCreationProgress.total) * 100}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1697,18 +2001,38 @@ export function OnboardingWizard() {
                     </Button>
                   )}
                   {step === 5 && (
-                    <Button
-                      size="sm"
-                      onClick={handleLaunchToDashboard}
-                      disabled={loading || launchStateIncomplete}
-                    >
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    <>
+                      {hiringPlanMarkdown ? (
+                        // Plan detected - show "Create team" button
+                        <Button
+                          size="sm"
+                          onClick={handleCreateTeam}
+                          disabled={creatingTeam || loading}
+                        >
+                          {creatingTeam ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          {creatingTeam ? "Creating team..." : "Create team & continue"}
+                        </Button>
                       ) : (
-                        <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                        // No plan yet - show "Skip" button as fallback
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleLaunchToDashboard}
+                          disabled={loading || launchStateIncomplete}
+                        >
+                          {loading ? (
+                            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                          )}
+                          {loading ? "Launching..." : "Skip team setup"}
+                        </Button>
                       )}
-                      {loading ? "Launching..." : "Get started"}
-                    </Button>
+                    </>
                   )}
                 </div>
               </div>

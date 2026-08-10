@@ -1,4 +1,4 @@
-import { redactHomePathUserSegments, redactTranscriptEntryPaths } from "@paperclipai/adapter-utils";
+import { redactHomePathUserSegments, redactTranscriptEntryPaths } from "../lib/paperclip-adapter-utils/src";
 import type { TranscriptEntry, StdoutLineParser, TranscriptParserSource } from "./types";
 
 export type RunLogChunk = { ts: string; stream: "stdout" | "stderr" | "system"; chunk: string; seq?: number };

@@ -3,7 +3,7 @@ import type {
   CompanySkillForkSummary,
   CompanySkillOriginalSummary,
   CompanySkillUsageAgent,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import {
   agentUsageSentence,
   formatForkSourceName,

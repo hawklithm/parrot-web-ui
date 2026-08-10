@@ -5,7 +5,7 @@ import type {
   CompanySkillDetail,
   CompanySkillUsageAgent,
   CompanySkillVersion,
-} from "@paperclipai/shared";
+} from "../../src/lib/paperclip-shared/src";
 import {
   AgentsUsingSkillBadge,
   AgentsUsingSkillDialog,

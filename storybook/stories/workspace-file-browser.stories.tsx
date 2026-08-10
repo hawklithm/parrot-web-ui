@@ -6,7 +6,7 @@ import type {
   WorkspaceFileContent,
   WorkspaceFileListFileItem,
   WorkspaceFileListResponse,
-} from "@paperclipai/shared";
+} from "../../src/lib/paperclip-shared/src";
 import { FileViewerProvider, useRequiredFileViewer } from "@/context/FileViewerContext";
 import { FileViewerSheet } from "@/components/FileViewerSheet";
 import { IssueWorkspaceCard } from "@/components/IssueWorkspaceCard";

@@ -1,7 +1,7 @@
-import type { ActivityEvent, RunLivenessState } from "@paperclipai/shared";
+import type { ActivityEvent, RunLivenessState } from "../lib/paperclip-shared/src";
 import { api, type RequestOptions } from "./client";
 
-export type { RunLivenessState } from "@paperclipai/shared";
+export type { RunLivenessState } from "../lib/paperclip-shared/src";
 
 export interface RunForIssue {
   runId: string;

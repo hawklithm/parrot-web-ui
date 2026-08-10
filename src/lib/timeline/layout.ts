@@ -18,7 +18,7 @@ import type {
   WorkTimelineEvent,
   WorkTimelineResult,
   WorkTimelineSpan,
-} from "@paperclipai/shared";
+} from "../../lib/paperclip-shared/src";
 
 export interface LayoutOptions {
   /** px per minute along the x axis (set by the zoom level). */

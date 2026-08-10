@@ -135,7 +135,7 @@ import { IssueReferencePill } from "@/components/IssueReferencePill";
 import { MembershipAction } from "@/components/MembershipAction";
 import { IssueOutputSection } from "@/components/issue-output/IssueOutputSection";
 import { EnvironmentVariablesEditor } from "@/components/environment-variables-editor";
-import type { CompanySecret, EnvBinding } from "@paperclipai/shared";
+import type { CompanySecret, EnvBinding } from "../lib/paperclip-shared/src";
 import {
   EnvInputsList,
   ExternalSourcesList,
@@ -155,7 +155,7 @@ import {
   sampleTeam,
   warnTeam,
 } from "@/pages/TeamCatalog.fixtures";
-import type { IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueWorkProduct } from "../lib/paperclip-shared/src";
 
 /* ------------------------------------------------------------------ */
 /*  Sample data for the Issue Output surface showcase                  */

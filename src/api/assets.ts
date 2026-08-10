@@ -1,4 +1,4 @@
-import type { AssetImage } from "@paperclipai/shared";
+import type { AssetImage } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export const assetsApi = {

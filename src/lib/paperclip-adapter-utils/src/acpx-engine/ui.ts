@@ -1,4 +1,4 @@
-import type { TranscriptEntry } from "@paperclipai/adapter-utils";
+import type { TranscriptEntry } from "../../../../lib/paperclip-adapter-utils/src";
 
 function parseJson(line: string): Record<string, unknown> | null {
   try {

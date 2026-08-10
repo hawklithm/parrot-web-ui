@@ -5,7 +5,7 @@ import type {
   InstanceExperimentalSettings,
   IssueGraphLivenessAutoRecoveryPreview,
   PatchInstanceExperimentalSettings,
-} from "@paperclipai/shared";
+} from "../lib/paperclip-shared/src";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { isWorktreeRuntime } from "../lib/worktree-branding";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";

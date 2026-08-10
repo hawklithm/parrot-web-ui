@@ -1,4 +1,4 @@
-import type { SourceTrustMetadata } from "@paperclipai/shared";
+import type { SourceTrustMetadata } from "../lib/paperclip-shared/src";
 import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

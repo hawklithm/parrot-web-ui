@@ -1,4 +1,4 @@
-import type { IssueRecoveryAction, IssueRecoveryActionKind } from "@paperclipai/shared";
+import type { IssueRecoveryAction, IssueRecoveryActionKind } from "../lib/paperclip-shared/src";
 import { Eye, OctagonAlert, RefreshCw, TriangleAlert } from "lucide-react";
 
 export type RecoveryDisplayState =

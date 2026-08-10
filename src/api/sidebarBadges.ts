@@ -1,4 +1,4 @@
-import type { SidebarBadges } from "@paperclipai/shared";
+import type { SidebarBadges } from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export const sidebarBadgesApi = {

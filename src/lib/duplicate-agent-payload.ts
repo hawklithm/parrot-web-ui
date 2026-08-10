@@ -1,4 +1,4 @@
-import type { AgentDetail } from "@paperclipai/shared";
+import type { AgentDetail } from "../lib/paperclip-shared/src";
 
 const INSTRUCTION_CONFIG_KEYS = [
   "instructionsBundleMode",
