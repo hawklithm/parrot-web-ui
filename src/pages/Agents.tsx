@@ -853,11 +853,19 @@ function LiveRunIndicator({
   runId: string;
   liveCount: number;
 }) {
+  const navigate = useNavigate();
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/agents/${agentRef}/runs/${runId}`);
+  };
+  
   return (
-    <Link
-      to={`/agents/${agentRef}/runs/${runId}`}
-      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 transition-colors no-underline"
-      onClick={(e) => e.stopPropagation()}
+    <button
+      type="button"
+      onClick={handleClick}
+      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 transition-colors no-underline cursor-pointer border-0"
     >
       <span className="relative flex h-2 w-2">
         <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
@@ -866,6 +874,6 @@ function LiveRunIndicator({
       <span className="text-(length:--text-micro) font-medium text-blue-600 dark:text-blue-400">
         Live{liveCount > 1 ? ` (${liveCount})` : ""}
       </span>
-    </Link>
+    </button>
   );
 }
