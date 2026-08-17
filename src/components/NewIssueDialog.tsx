@@ -817,11 +817,17 @@ export function NewIssueDialog() {
       setIssueText(draft.title, draft.description);
       setStatus(draft.status || "todo");
       setPriority(draft.priority);
-      setAssigneeValue(
-        newIssueDefaults.assigneeAgentId || newIssueDefaults.assigneeUserId
-          ? assigneeValueFromSelection(newIssueDefaults)
-          : (draft.assigneeValue ?? draft.assigneeId ?? ""),
-      );
+      // Validate assignee against current agents to prevent foreign key constraint violation
+      const draftAssigneeValue = newIssueDefaults.assigneeAgentId || newIssueDefaults.assigneeUserId
+        ? assigneeValueFromSelection(newIssueDefaults)
+        : (draft.assigneeValue ?? draft.assigneeId ?? "");
+      
+      // Parse and validate the assignee value
+      const parsedAssignee = parseAssigneeValue(draftAssigneeValue);
+      const isValidAssignee = !parsedAssignee.assigneeAgentId || 
+        (agents ?? []).some((agent) => agent.id === parsedAssignee.assigneeAgentId);
+      
+      setAssigneeValue(isValidAssignee ? draftAssigneeValue : "");
       setReviewerValue(draft.reviewerValue ?? "");
       setApproverValue(draft.approverValue ?? "");
       setShowReviewerRow(!!(draft.reviewerValue));

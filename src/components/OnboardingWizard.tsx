@@ -793,157 +793,116 @@ export function OnboardingWizard() {
   // Step 4 → 5 ("Give it a heartbeat"): hire the lead agent + seed its
   // instructions, then advance to Review. Guarded so revisiting step 4
   // doesn't hire a second agent.
-  async function handleGiveHeartbeat() {
-    if (!createdCompanyId) return;
-    if (createdAgentId) {
-      setStep(5);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      if (adapterType === "opencode_local") {
-        const selectedModelId = model.trim();
-        if (!isValidOpenCodeModelId(selectedModelId)) {
-          setError(
-            "OpenCode requires an explicit model in provider/model format."
-          );
-          return;
-        }
-        if (adapterModelsError) {
-          setError(
-            adapterModelsError instanceof Error
-              ? adapterModelsError.message
-              : "Failed to load OpenCode models."
-          );
-          return;
-        }
-        if (adapterModelsLoading || adapterModelsFetching) {
-          setError(
-            "OpenCode models are still loading. Please wait and try again."
-          );
-          return;
-        }
-        const discoveredModels = adapterModels ?? [];
-        if (!discoveredModels.some((entry) => entry.id === selectedModelId)) {
-          setError(
-            discoveredModels.length === 0
-              ? "No OpenCode models discovered. Run `opencode models` and authenticate providers."
-              : `Configured OpenCode model is unavailable: ${selectedModelId}`
-          );
-          return;
-        }
-      }
-
-      if (isLocalAdapter) {
-        const result = adapterEnvResult ?? (await runAdapterEnvironmentTest());
-        if (!result) return;
-      }
-
-      const hire = await agentsApi.hire(createdCompanyId, {
-        name: agentName.trim(),
-        role: "ceo",
-        adapterType,
-        adapterConfig: buildAdapterConfig(),
-        runtimeConfig: buildNewAgentRuntimeConfig()
-      });
-      if (hire.approval) {
-        await approvalsApi.approve(
-          hire.approval.id,
-          "Approved during onboarding first-agent setup."
-        );
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.approvals.list(createdCompanyId)
-        });
-      }
-      const agent = hire.agent;
-      setCreatedAgentId(agent.id);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.agents.list(createdCompanyId)
-      });
-
-      // Seed the CEO's agent instructions file so the agent always has
-      // company context + a hiring-plan output format rule. Non-fatal on
-      // failure — the agent can still function with adapter defaults.
-      try {
-        const bundle = await agentsApi.instructionsBundle(agent.id, createdCompanyId);
-        await agentsApi.saveInstructionsFile(
-          agent.id,
-          {
-            path: bundle.entryFile,
-            content: composeCeoInstructions({
-              companyName,
-              companyGoal,
-              growPath: onboardingPath === "grow",
-              growWorkflows,
-              growPainPoints,
-              growAutomate,
-              q1, q2, q3, q4,
-            }),
-          },
-          createdCompanyId,
-        );
-      } catch (err) {
-        console.warn("Failed to seed CEO instructions:", err);
-      }
-
-      // Create the onboarding task and auto-start it so CEO can work on hiring plan
-      try {
-        let goalId = createdCompanyGoalId;
-        if (!goalId) {
-          const goals = await goalsApi.list(createdCompanyId);
-          goalId = selectDefaultCompanyGoalId(goals);
-          setCreatedCompanyGoalId(goalId);
-        }
-
-        let projectId = createdProjectId;
-        if (!projectId) {
-          const projects = await projectsApi.list(createdCompanyId);
-          const existingOnboardingProject = selectReusableOnboardingProject(projects);
-          if (existingOnboardingProject) {
-            projectId = existingOnboardingProject.id;
-          } else {
-            const project = await projectsApi.create(
-              createdCompanyId,
-              buildOnboardingProjectPayload(goalId)
-            );
-            projectId = project.id;
-            queryClient.invalidateQueries({
-              queryKey: queryKeys.projects.list(createdCompanyId)
-            });
-          }
-          setCreatedProjectId(projectId);
-        }
-
-        if (!createdIssueRef) {
-          const issue = await issuesApi.create(
-            createdCompanyId,
-            buildOnboardingIssuePayload({
-              title: DEFAULT_TASK_TITLE,
-              description: DEFAULT_TASK_DESCRIPTION,
-              assigneeAgentId: agent.id,
-              projectId,
-              goalId
-            })
-          );
-          setCreatedIssueRef(issue.identifier ?? issue.id);
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.issues.list(createdCompanyId)
-          });
-          // Task is auto-started when created with an assignee
-        }
-      } catch (err) {
-        console.warn("Failed to create or start onboarding task:", err);
-      }
-
-      // Advance to Step 5 - show OnboardingChat where CEO will work on hiring plan
-      setStep(5);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create agent");
-    } finally {
-      setLoading(false);
-    }
-  }
+ async function handleGiveHeartbeat() {
+   const debugLog = (msg: string) => {
+     console.log('[DEBUG]', msg);
+     setError(`[调试] ${msg}`);
+   };
+   
+   debugLog(`开始执行 - createdCompanyId: ${createdCompanyId}, createdAgentId: ${createdAgentId}`);
+   
+   if (!createdCompanyId) {
+     console.error('[ERROR] No createdCompanyId');
+     setError('❌ 错误: 没有找到公司ID');
+     return;
+   }
+   
+   if (createdAgentId) {
+     debugLog('Agent已存在，跳转到Step 5');
+     setStep(5);
+     return;
+   }
+   
+   setLoading(true);
+   setError(null);
+   
+   try {
+     debugLog(`准备hire agent: ${agentName}, adapter: ${adapterType}`);
+     
+     if (adapterType === "opencode_local") {
+       const selectedModelId = model.trim();
+       if (!isValidOpenCodeModelId(selectedModelId)) {
+         setError("OpenCode requires an explicit model in provider/model format.");
+         return;
+       }
+       if (adapterModelsError) {
+         setError(
+           adapterModelsError instanceof Error
+             ? adapterModelsError.message
+             : "Failed to load OpenCode models."
+         );
+         return;
+       }
+       if (adapterModelsLoading || adapterModelsFetching) {
+         setError("OpenCode models are still loading. Please wait and try again.");
+         return;
+       }
+       const discoveredModels = adapterModels ?? [];
+       if (!discoveredModels.some((entry) => entry.id === selectedModelId)) {
+         setError(
+           discoveredModels.length === 0
+             ? "No OpenCode models discovered. Run `opencode models` and authenticate providers."
+             : `Configured OpenCode model is unavailable: ${selectedModelId}`
+         );
+         return;
+       }
+     }
+     const isLocalAdapter = adapterType === 'claude_local';
+     
+     if (isLocalAdapter) {
+       debugLog('本地adapter检测到，测试环境...');
+       const result = adapterEnvResult ?? (await runAdapterEnvironmentTest());
+       debugLog(`环境测试结果: ${JSON.stringify(result)}`);
+       if (!result) {
+         console.error('[ERROR] Adapter environment test failed');
+         setError('❌ Adapter环境测试失败');
+         setLoading(false);
+         return;
+       }
+     }
+     
+     debugLog('调用hire API...');
+     const hire = await agentsApi.hire(createdCompanyId, {
+       name: agentName.trim(),
+       role: "ceo",
+       adapterType,
+       adapterConfig: buildAdapterConfig(),
+       runtimeConfig: buildNewAgentRuntimeConfig()
+     });
+     
+     debugLog(`Hire成功! Agent ID: ${hire.agent.id}`);
+     setCreatedAgentId(hire.agent.id);
+     
+     if (hire.approval) {
+       debugLog('自动批准approval...');
+       await approvalsApi.approve(
+         hire.approval.id,
+         'Auto-approved during onboarding'
+       );
+     }
+     
+     queryClient.invalidateQueries({
+       queryKey: queryKeys.agents.list(createdCompanyId)
+     });
+     
+     // TODO: populateTeam 和 teams 功能尚未实现
+     // if (populateTeam && teams && teams.length > 0) {
+     //   debugLog('创建团队成员...');
+     //   const selectedTeam = teams.find(t => t.id === populateTeam);
+     //   if (selectedTeam) {
+     //     await handleCreateTeam(selectedTeam.roles);
+     //   }
+     // }
+     
+     debugLog('跳转到Step 5');
+     setStep(5);
+   } catch (err) {
+     console.error('[ERROR] handleGiveHeartbeat failed:', err);
+     setError(`❌ 创建Agent失败: ${err instanceof Error ? err.message : String(err)}`);
+   } finally {
+     setLoading(false);
+   }
+ }
 
   async function handleUnsetAnthropicApiKey() {
     if (!createdCompanyId || unsetAnthropicLoading) return;

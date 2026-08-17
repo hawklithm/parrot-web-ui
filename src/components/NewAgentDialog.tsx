@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
  */
 const SYSTEM_ADAPTER_TYPES = new Set(["process", "http"]);
 
-type NewAgentDialogMode = "choices" | "runtime" | "invite" | "prompt";
+type NewAgentDialogMode = "choices" | "runtime" | "invite" | "prompt" | "ask-ceo";
 
 function isAgentAdapterType(type: string): boolean {
   return !SYSTEM_ADAPTER_TYPES.has(type);
@@ -49,6 +49,7 @@ export function NewAgentDialog() {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<NewAgentDialogMode>("choices");
   const [agentMessage, setAgentMessage] = useState("");
+  const [ceoTaskDescription, setCeoTaskDescription] = useState("");
   const [latestAgentPrompt, setLatestAgentPrompt] = useState<string | null>(null);
   const [latestAgentPromptCopied, setLatestAgentPromptCopied] = useState(false);
   const disabledTypes = useDisabledAdaptersSync();
@@ -56,6 +57,7 @@ export function NewAgentDialog() {
   function resetDialogState() {
     setMode("choices");
     setAgentMessage("");
+    setCeoTaskDescription("");
     setLatestAgentPrompt(null);
     setLatestAgentPromptCopied(false);
   }
@@ -117,12 +119,62 @@ export function NewAgentDialog() {
   }, [disabledTypes, serverAdapters]);
 
   function handleAskCeo() {
+    // 打开描述输入界面，而不是直接创建任务
+    setMode("ask-ceo");
+  }
+
+  function handleCreateCeoTask() {
+    const userDescription = ceoTaskDescription.trim();
+    
+    // 构建明确的指令模板，告诉CEO agent如何创建agent
+    const description = userDescription ? `${userDescription}
+
+---
+
+**Instructions for CEO:**
+
+Please create this agent by calling the Paperclip MCP tool \`create_agent_hire\` with the following steps:
+
+1. Extract the agent specifications from the description above
+2. Call the tool with these parameters:
+   - \`name\`: The agent's name (e.g., "Backend Engineer")
+   - \`role\`: Use "general" for worker agents, or specify "researcher"/"manager" if mentioned
+   - \`adapterType\`: Use "claude_local" unless specified otherwise
+   - \`title\`: Optional short title
+   - \`capabilities\`: Brief description of the agent's skills
+
+3. After successful creation, report the new agent's ID and confirm it's ready to work
+
+Example tool call:
+\`\`\`
+create_agent_hire({
+  "name": "Backend Engineer",
+  "role": "general",
+  "adapterType": "claude_local",
+  "capabilities": "Python, PostgreSQL, API design, testing"
+})
+\`\`\`
+
+Make sure to actually execute the tool call - don't just acknowledge the task.` 
+    : `Create a new agent.
+
+**Instructions:**
+Please describe the agent you want to create, including:
+- Agent name and role
+- Primary responsibilities
+- Required skills or specializations
+- Any specific configuration needs
+
+Then use the Paperclip MCP tool \`create_agent_hire\` to create it.`;
+
     closeNewAgent();
     openNewIssue({
       assigneeAgentId: ceoAgent?.id,
       title: "Create a new agent",
-      description: "(type in what kind of agent you want here)",
+      description,
     });
+    // 重置状态
+    resetDialogState();
   }
 
   function handleAdvancedConfig() {
@@ -228,7 +280,7 @@ export function NewAgentDialog() {
         showCloseButton={false}
         className={cn(
           "max-h-(--sz-calc-16) p-0 gap-0 overflow-hidden flex flex-col",
-          mode === "invite" || mode === "prompt" ? "sm:max-w-2xl" : "sm:max-w-md",
+          mode === "invite" || mode === "prompt" || mode === "ask-ceo" ? "sm:max-w-2xl" : "sm:max-w-md",
         )}
       >
         {/* Header */}
@@ -325,6 +377,96 @@ export function NewAgentDialog() {
                 ))}
               </div>
             </>
+          ) : mode === "ask-ceo" ? (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <button
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMode("choices")}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Back
+                </button>
+                <div className="space-y-1">
+                  <h2 className="text-sm font-semibold">Describe the agent you want</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Tell the CEO what kind of agent to create. Be specific about the agent's role, responsibilities, and any special requirements.
+                  </p>
+                </div>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">Agent requirements</span>
+                <Textarea
+                  value={ceoTaskDescription}
+                  onChange={(event) => setCeoTaskDescription(event.target.value)}
+                  className="min-h-48 resize-y font-mono text-sm"
+        placeholder={`Example:
+
+Create a **Backend Engineer** agent with these specifications:
+
+**Role**: Senior Backend Developer
+
+**Primary Responsibilities**:
+- Review and optimize Python code
+- Design and implement RESTful APIs
+- Write unit and integration tests
+- Database schema design and migrations
+- Performance tuning and optimization
+
+**Required Skills**:
+- Python (FastAPI, SQLAlchemy)
+- PostgreSQL
+- Redis caching
+- Docker and CI/CD
+
+**Configuration**:
+- Adapter: claude_local (Claude Sonnet 3.5)
+- Budget: Standard developer tier
+- Reports to: CTO`}
+                  maxLength={8000}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {ceoTaskDescription.length}/8000 characters
+                </p>
+              </label>
+
+              <div className="rounded-lg border border-amber-200 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium mb-1">💡 提示</p>
+                <p>CEO agent会读取你的描述并自动调用API创建agent。描述越详细，创建的agent越符合预期。</p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCreateCeoTask}
+                  disabled={!ceoTaskDescription.trim() || !selectedCompanyId}
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  Create task for CEO
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCeoTaskDescription(`Create a **Backend Engineer** agent:
+
+**Role**: Senior Backend Developer
+
+**Responsibilities**:
+- Python code review and optimization
+- RESTful API design and implementation
+- Write comprehensive tests
+- Database schema design
+- Performance tuning
+
+*: Python (FastAPI, SQLAlchemy), PostgreSQL, Redis, Docker
+
+**Config**: claude_local adapter, standard budget`);
+                  }}
+                >
+                  Use example
+                </Button>
+              </div>
+            </div>
           ) : mode === "invite" ? (
             <div className="space-y-5">
               <div className="space-y-2">
