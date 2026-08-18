@@ -123,68 +123,78 @@ export function NewAgentDialog() {
     setMode("ask-ceo");
   }
 
-  function handleCreateCeoTask() {
+  async function handleCreateCeoTask() {
     const userDescription = ceoTaskDescription.trim();
-    
-    // 使用 Paperclip 原版的 Skill 文档方式，而不是依赖 MCP 工具
-    const description = userDescription ? `${userDescription}
+    if (!userDescription || !selectedCompanyId) {
+      pushToast({
+        kind: "error",
+        title: "缺少必要信息",
+        body: "请提供agent描述",
+      });
+      return;
+    }
 
----
+    try {
+      // 直接调用agent-hires API,而不是创建Issue
+      const response = await agentsApi.hire(selectedCompanyId, {
+        name: userDescription.split('\n')[0].slice(0, 50) || "New Agent", // 使用描述的第一行作为名称
+        role: "general",
+        adapterType: "claude_local",
+        capabilities: userDescription,
+      });
 
-**Instructions for CEO:**
-
-Please create this agent by following the \`paperclip-create-agent\` skill workflow:
-
-1. **Read the skill documentation**: Check \`skills/paperclip-create-agent/SKILL.md\` for the complete workflow
-2. **Extract requirements** from the description above
-3. **Choose an instruction template** from \`skills/paperclip-create-agent/references/agents/\`:
-   - Use \`coder.md\` for engineers who write/edit code
-   - Use \`qa.md\` for quality assurance and testing
-   - Use \`uxdesigner.md\` for UX/UI designers
-   - Use \`securityengineer.md\` for security specialists
-   - Use \`baseline-role-guide.md\` if no template matches
-
-4. **Submit the hire request** using curl:
-\`\`\`bash
-curl -sS -X POST "$PAPERCLIP_API_URL/api/companies/$PAPERCLIP_COMPANY_ID/agent-hires" \\
-  -H "Authorization: Bearer $PAPERCLIP_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "Agent Name",
-    "role": "general",
-    "title": "Job Title",
-    "icon": "briefcase",
-    "capabilities": "Brief description of skills",
-    "adapterType": "claude_local",
-    "instructionsBundle": {"files": {"AGENTS.md": "...from template..."}},
-    "sourceIssueId": "'$PAPERCLIP_ISSUE_ID'"
-  }'
-\`\`\`
-
-5. **Handle approval** if required by company policy
-
-**Important**: Do NOT use the \`paperclipHireAgent\` MCP tool. Use the curl command directly as shown in the skill documentation.` 
-    : `Create a new agent.
-
-**Instructions:**
-
-Follow the \`paperclip-create-agent\` skill workflow to create a new agent:
-
-1. Read \`skills/paperclip-create-agent/SKILL.md\` for complete instructions
-2. Describe the agent role and requirements
-3. Choose the appropriate instruction template from \`references/agents/\`
-4. Submit the hire request via curl API call (see skill documentation)
-
-Do NOT use MCP tools - follow the documented curl-based workflow.`;
-
-    closeNewAgent();
-    openNewIssue({
-      assigneeAgentId: ceoAgent?.id,
-      title: "Create a new agent",
-      description,
-    });
-    // 重置状态
-    resetDialogState();
+      if (response.approval) {
+        // 需要审批
+        pushToast({
+          kind: "success",
+          title: "Agent创建请求已提交",
+          body: `等待Board审批。审批ID: ${response.approval.id}`,
+        });
+        
+        // 可选:跳转到审批页面
+        if (response.approval.id) {
+          navigate(`/approvals/${response.approval.id}`);
+        }
+      } else if (response.agent) {
+        // 直接创建成功
+        pushToast({
+          kind: "success",
+          title: "Agent创建成功",
+          body: `${response.agent.name} 已创建`,
+        });
+        
+        // 刷新agent列表
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.agents(selectedCompanyId),
+        });
+        
+        // 跳转到agent详情页
+        navigate(`/agents/${response.agent.id}`);
+      }
+      
+      // 关闭对话框
+      closeNewAgent();
+      resetDialogState();
+    } catch (error) {
+      console.error("Failed to create agent:", error);
+      
+      let errorMessage = "创建agent失败,请稍后重试";
+      if (error instanceof ApiError) {
+        if (error.status === 403) {
+          errorMessage = "权限不足,无法创建agent。请联系管理员。";
+        } else if (error.status === 409) {
+          errorMessage = "Agent名称已存在,请使用不同的描述。";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      pushToast({
+        kind: "error",
+        title: "创建失败",
+        body: errorMessage,
+      });
+    }
   }
 
   function handleAdvancedConfig() {
