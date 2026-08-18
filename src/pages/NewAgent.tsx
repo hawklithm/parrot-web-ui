@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
@@ -70,6 +70,9 @@ export function NewAgent() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [role, setRole] = useState("general");
+  
+  // 使用 ref 跟踪是否已经设置过默认值，避免用户输入时被覆盖
+  const defaultsApplied = useRef(false);
   const [reportsTo, setReportsTo] = useState<string | null>(null);
   const [configValues, setConfigValues] = useState<CreateConfigValues>(defaultCreateValues);
   const [permissions, setPermissions] = useState<Partial<AgentPermissions>>(
@@ -126,12 +129,14 @@ export function NewAgent() {
     ]);
   }, [setBreadcrumbs]);
 
+  // 只在首次检测到是第一个 agent 时设置默认值一次
   useEffect(() => {
-    if (isFirstAgent) {
+    if (isFirstAgent && !defaultsApplied.current) {
       if (!name) setName("CEO");
       if (!title) setTitle("CEO");
+      defaultsApplied.current = true;
     }
-  }, [isFirstAgent]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isFirstAgent, name, title]);
 
   useEffect(() => {
     const requested = presetAdapterType;

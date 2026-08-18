@@ -133,7 +133,7 @@ export function NewAgentDialog() {
 
 **Instructions for CEO:**
 
-Please create this agent by calling the Paperclip MCP tool \`create_agent_hire\` with the following steps:
+Please create this agent by calling the Paperclip MCP tool \`paperclipHireAgent\` with the following steps:
 
 1. Extract the agent specifications from the description above
 2. Call the tool with these parameters:
@@ -147,7 +147,7 @@ Please create this agent by calling the Paperclip MCP tool \`create_agent_hire\`
 
 Example tool call:
 \`\`\`
-create_agent_hire({
+paperclipHireAgent({
   "name": "Backend Engineer",
   "role": "general",
   "adapterType": "claude_local",
@@ -165,7 +165,7 @@ Please describe the agent you want to create, including:
 - Required skills or specializations
 - Any specific configuration needs
 
-Then use the Paperclip MCP tool \`create_agent_hire\` to create it.`;
+Then use the Paperclip MCP tool \`paperclipHireAgent\` to create it.`;
 
     closeNewAgent();
     openNewIssue({

@@ -33,7 +33,10 @@ export function asFiniteNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-export function formatCents(cents: number): string {
+export function formatCents(cents: number | undefined | null): string {
+  if (cents === undefined || cents === null || isNaN(cents)) {
+    return "$0.00";
+  }
   return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
