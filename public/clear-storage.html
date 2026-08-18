@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Browser Storage - Parrot Agent</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .storage-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .storage-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .storage-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .storage-item:last-child {
+            border-bottom: none;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            display: none;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .action-buttons {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Browser Storage</h1>
+        <p class="subtitle">Parrot Agent - E2E Testing Tool</p>
+        
+        <div class="warning">
+            <strong>⚠️ Warning:</strong> This will permanently delete all stored data in your browser for this application, including:
+            <ul>
+                <li>Authentication tokens and session data</li>
+                <li>User preferences and settings</li>
+                <li>Cached data and temporary storage</li>
+            </ul>
+        </div>
+
+        <div class="storage-info">
+            <h3>Current Storage Status</h3>
+            <div id="storageStatus">Loading...</div>
+        </div>
+
+        <div class="action-buttons">
+            <button onclick="clearAllStorage()">Clear All Storage</button>
+            <button class="secondary" onclick="location.reload()">Refresh Status</button>
+        </div>
+
+        <div class="success" id="successMessage">
+            ✅ All browser storage has been cleared successfully!
+        </div>
+    </div>
+
+    <script>
+        // 显示当前存储状态
+        function displayStorageStatus() {
+            const statusDiv = document.getElementById('storageStatus');
+            let html = '';
+
+            // LocalStorage
+            const localStorageCount = localStorage.length;
+            html += `<div class="storage-item">`;
+            html += `<strong>localStorage:</strong> ${localStorageCount} items`;
+            if (localStorageCount > 0) {
+                html += `<ul style="margin: 5px 0 0 20px;">`;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    html += `<li><code>${key}</code>: ${preview.length} chars</li>`;
+                }
+                html += `</ul>`;
+            }
+            html += `</div>`;
+
+            // SessionStorage
+            const sessionStorageCount = sessionStorage.length;
+            html += `<div class="storage-item">`;
+            html += `<strong>sessionStorage:</strong> ${sessionStorageCount} items`;
+            if (sessionStorageCount > 0) {
+                html += `<ul style="margin: 5px 0 0 20px;">`;
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    const value = sessionStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    html += `<li><code>${key}</code>: ${preview.length} chars</li>`;
+                }
+                html += `</ul>`;
+            }
+            html += `</div>`;
+
+            // IndexedDB
+            if (window.indexedDB) {
+                html += `<div class="storage-item">`;
+                html += `<strong>IndexedDB:</strong> Available (will be cleared)`;
+                html += `</div>`;
+            }
+
+            // Cookies
+            const cookieCount = document.cookie.split(';').filter(c => c.trim()).length;
+            html += `<div class="storage-item">`;
+            html += `<strong>Cookies:</strong> ${cookieCount} items`;
+            html += `</div>`;
+
+            statusDiv.innerHTML = html;
+        }
+
+        // 清空所有存储
+        async function clearAllStorage() {
+            if (!confirm('Are you sure you want to clear ALL browser storage? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                // 1. 清空 localStorage
+                localStorage.clear();
+                console.log('✅ localStorage cleared');
+
+                // 2. 清空 sessionStorage
+                sessionStorage.clear();
+                console.log('✅ sessionStorage cleared');
+
+                // 3. 清空 IndexedDB
+                if (window.indexedDB) {
+                    const databases = await window.indexedDB.databases();
+                    for (const db of databases) {
+                        if (db.name) {
+                            window.indexedDB.deleteDatabase(db.name);
+                            console.log(`✅ IndexedDB "${db.name}" deleted`);
+                        }
+                    }
+                }
+
+                // 4. 清空 Cookies
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf('=');
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                }
+                console.log('✅ Cookies cleared');
+
+                // 5. 清空 Cache Storage
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    console.log('✅ Cache Storage cleared');
+                }
+
+                // 显示成功消息
+                document.getElementById('successMessage').style.display = 'block';
+                
+                // 更新状态显示
+                setTimeout(() => {
+                    displayStorageStatus();
+                }, 500);
+
+            } catch (error) {
+                console.error('Error clearing storage:', error);
+                alert('Error clearing storage: ' + error.message);
+            }
+        }
+
+        // 页面加载时显示状态
+        window.addEventListener('DOMContentLoaded', displayStorageStatus);
+    </script>
+</body>
+</html>
