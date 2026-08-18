@@ -126,46 +126,56 @@ export function NewAgentDialog() {
   function handleCreateCeoTask() {
     const userDescription = ceoTaskDescription.trim();
     
-    // 构建明确的指令模板，告诉CEO agent如何创建agent
+    // 使用 Paperclip 原版的 Skill 文档方式，而不是依赖 MCP 工具
     const description = userDescription ? `${userDescription}
 
 ---
 
 **Instructions for CEO:**
 
-Please create this agent by calling the Paperclip MCP tool \`paperclipHireAgent\` with the following steps:
+Please create this agent by following the \`paperclip-create-agent\` skill workflow:
 
-1. Extract the agent specifications from the description above
-2. Call the tool with these parameters:
-   - \`name\`: The agent's name (e.g., "Backend Engineer")
-   - \`role\`: Use "general" for worker agents, or specify "researcher"/"manager" if mentioned
-   - \`adapterType\`: Use "claude_local" unless specified otherwise
-   - \`title\`: Optional short title
-   - \`capabilities\`: Brief description of the agent's skills
+1. **Read the skill documentation**: Check \`skills/paperclip-create-agent/SKILL.md\` for the complete workflow
+2. **Extract requirements** from the description above
+3. **Choose an instruction template** from \`skills/paperclip-create-agent/references/agents/\`:
+   - Use \`coder.md\` for engineers who write/edit code
+   - Use \`qa.md\` for quality assurance and testing
+   - Use \`uxdesigner.md\` for UX/UI designers
+   - Use \`securityengineer.md\` for security specialists
+   - Use \`baseline-role-guide.md\` if no template matches
 
-3. After successful creation, report the new agent's ID and confirm it's ready to work
-
-Example tool call:
+4. **Submit the hire request** using curl:
+\`\`\`bash
+curl -sS -X POST "$PAPERCLIP_API_URL/api/companies/$PAPERCLIP_COMPANY_ID/agent-hires" \\
+  -H "Authorization: Bearer $PAPERCLIP_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Agent Name",
+    "role": "general",
+    "title": "Job Title",
+    "icon": "briefcase",
+    "capabilities": "Brief description of skills",
+    "adapterType": "claude_local",
+    "instructionsBundle": {"files": {"AGENTS.md": "...from template..."}},
+    "sourceIssueId": "'$PAPERCLIP_ISSUE_ID'"
+  }'
 \`\`\`
-paperclipHireAgent({
-  "name": "Backend Engineer",
-  "role": "general",
-  "adapterType": "claude_local",
-  "capabilities": "Python, PostgreSQL, API design, testing"
-})
-\`\`\`
 
-Make sure to actually execute the tool call - don't just acknowledge the task.` 
+5. **Handle approval** if required by company policy
+
+**Important**: Do NOT use the \`paperclipHireAgent\` MCP tool. Use the curl command directly as shown in the skill documentation.` 
     : `Create a new agent.
 
 **Instructions:**
-Please describe the agent you want to create, including:
-- Agent name and role
-- Primary responsibilities
-- Required skills or specializations
-- Any specific configuration needs
 
-Then use the Paperclip MCP tool \`paperclipHireAgent\` to create it.`;
+Follow the \`paperclip-create-agent\` skill workflow to create a new agent:
+
+1. Read \`skills/paperclip-create-agent/SKILL.md\` for complete instructions
+2. Describe the agent role and requirements
+3. Choose the appropriate instruction template from \`references/agents/\`
+4. Submit the hire request via curl API call (see skill documentation)
+
+Do NOT use MCP tools - follow the documented curl-based workflow.`;
 
     closeNewAgent();
     openNewIssue({
