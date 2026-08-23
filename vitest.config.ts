@@ -5,7 +5,16 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      lexical: path.resolve(__dirname, "./node_modules/lexical/dist/Lexical.mjs"),
+      "@paperclipai/shared": path.resolve(
+        __dirname,
+        "./src/lib/paperclip-tools-shared/index.ts",
+      ),
+      "@assistant-ui/react": path.resolve(__dirname, "./src/lib/assistant-ui-stub"),
+      "parrot-adapter-utils": path.resolve(
+        __dirname,
+        "./src/lib/paperclip-adapter-utils/src/index.ts",
+      ),
+      lexical: path.resolve(__dirname, "./node_modules/lexical/Lexical.mjs"),
     },
   },
   test: {
