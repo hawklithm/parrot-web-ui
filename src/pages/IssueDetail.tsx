@@ -175,6 +175,7 @@ import {
   PlayCircle,
   Plus,
   Repeat,
+  RotateCcw,
   SlidersHorizontal,
   XCircle,
 } from "lucide-react";
@@ -1525,6 +1526,8 @@ export function IssueDetail() {
   } | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [attachmentDragActive, setAttachmentDragActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [failedUploadFile, setFailedUploadFile] = useState<File | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [treeControlOpen, setTreeControlOpen] = useState(false);
@@ -2964,17 +2967,30 @@ export function IssueDetail() {
   const uploadAttachment = useMutation({
     mutationFn: async (file: File) => {
       if (!selectedCompanyId) throw new Error("No company selected");
-      return issuesApi.uploadAttachment(selectedCompanyId, issueId!, file);
+      setFailedUploadFile(null);
+      setUploadProgress(0);
+      return issuesApi.uploadAttachment(selectedCompanyId, issueId!, file, null, (percent) => {
+        setUploadProgress(percent);
+      });
     },
     onSuccess: () => {
       setAttachmentError(null);
+      setUploadProgress(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.issues.attachments(issueId!) });
       invalidateIssueDetail();
     },
-    onError: (err) => {
+    onError: (err, file) => {
+      setUploadProgress(null);
+      setFailedUploadFile(file);
       setAttachmentError(err instanceof Error ? err.message : "Upload failed");
     },
   });
+
+  const retryFailedUpload = useCallback(() => {
+    if (failedUploadFile) {
+      uploadAttachment.mutate(failedUploadFile);
+    }
+  }, [failedUploadFile, uploadAttachment]);
 
   const importMarkdownDocument = useMutation({
     mutationFn: async (file: File) => {
@@ -4568,6 +4584,31 @@ export function IssueDetail() {
         }}
       />
 
+      {uploadProgress !== null && (
+        <div className="space-y-1 rounded-lg border border-border p-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Uploading attachment…</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {failedUploadFile && !uploadAttachment.isPending && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/40 p-3 text-sm">
+          <span className="text-destructive">Upload failed: {attachmentError ?? "Try again."}</span>
+          <Button size="sm" variant="outline" onClick={retryFailedUpload}>
+            <RotateCcw className="mr-1 h-4 w-4" />
+            Retry upload
+          </Button>
+        </div>
+      )}
+
       {attachmentsInitialLoading ? (
         <IssueSectionSkeleton titleWidth="w-24" rows={2} />
       ) : hasAttachments ? (
@@ -4577,7 +4618,12 @@ export function IssueDetail() {
           error={attachmentError}
           dragActive={attachmentDragActive}
           deletePending={deleteAttachment.isPending}
-          onDelete={(attachmentId) => deleteAttachment.mutate(attachmentId)}
+          onDelete={(attachmentId) => {
+            const target = attachmentList.find((a) => a.id === attachmentId);
+            const label = target?.originalFilename ?? "this attachment";
+            if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+            deleteAttachment.mutate(attachmentId);
+          }}
           onImageClick={(attachment) => {
             const idx = mediaGalleryItems.findIndex((a) => a.id === attachment.id);
             setGalleryIndex(idx >= 0 ? idx : 0);

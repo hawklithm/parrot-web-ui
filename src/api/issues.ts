@@ -314,13 +314,18 @@ export const issuesApi = {
     issueId: string,
     file: File,
     issueCommentId?: string | null,
+    onProgress?: (percent: number) => void,
   ) => {
     const form = new FormData();
     form.append("file", file);
     if (issueCommentId) {
       form.append("issueCommentId", issueCommentId);
     }
-    return api.postForm<IssueAttachment>(`/companies/${companyId}/issues/${issueId}/attachments`, form);
+    return api.uploadWithProgress<IssueAttachment>(
+      `/companies/${companyId}/issues/${issueId}/attachments`,
+      form,
+      onProgress,
+    );
   },
   deleteAttachment: (id: string) => api.delete<{ ok: true }>(`/attachments/${id}`),
   listApprovals: (id: string) => api.get<Approval[]>(`/issues/${id}/approvals`),

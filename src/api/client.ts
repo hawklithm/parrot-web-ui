@@ -145,6 +145,60 @@ export const api = {
     request<T>(path, { method: "POST", body: JSON.stringify(body), signal: options?.signal }),
   postForm: <T>(path: string, body: FormData, options?: RequestOptions) =>
     request<T>(path, { method: "POST", body, signal: options?.signal }),
+  /**
+   * Upload a FormData body with upload progress reporting (XHR-based, since
+   * fetch has no upload progress events). Resolves with the parsed JSON body
+   * and rejects with ApiError on non-2xx, mirroring `request`.
+   */
+  uploadWithProgress: <T>(
+    path: string,
+    body: FormData,
+    onProgress?: (percent: number) => void,
+    options?: RequestOptions,
+  ): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${BASE}${path}`);
+      xhr.withCredentials = true;
+      // Mirror the observability headers `request` sets (XHR needs
+      // setRequestHeader, not a Headers object).
+      if (typeof window !== "undefined" && window.location) {
+        xhr.setRequestHeader("X-Paperclip-Route", window.location.pathname);
+      }
+      xhr.upload.onprogress = (event) => {
+        if (!onProgress || !event.lengthComputable) return;
+        onProgress(Math.min(99, Math.round((event.loaded / event.total) * 100)));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(xhr.responseText ? (JSON.parse(xhr.responseText) as T) : (undefined as T));
+          } catch {
+            reject(new ApiError("Invalid upload response", xhr.status, null));
+          }
+          return;
+        }
+        let errorBody: unknown = null;
+        try {
+          errorBody = JSON.parse(xhr.responseText);
+        } catch {
+          /* non-JSON error body */
+        }
+        reject(
+          new ApiError(
+            (errorBody as { error?: string } | null)?.error ?? `Request failed: ${xhr.status}`,
+            xhr.status,
+            errorBody,
+          ),
+        );
+      };
+      xhr.onerror = () => reject(new ApiError("Network error during upload", 0, null));
+      xhr.onabort = () => reject(new ApiError("Upload aborted", 0, null));
+      if (options?.signal) {
+        options.signal.addEventListener("abort", () => xhr.abort(), { once: true });
+      }
+      xhr.send(body);
+    }),
   put: <T>(path: string, body: unknown, options?: RequestOptions) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body), signal: options?.signal }),
   patch: <T>(path: string, body: unknown, options?: RequestOptions) =>

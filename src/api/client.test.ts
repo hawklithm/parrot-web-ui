@@ -130,3 +130,94 @@ describe("per-caller abort semantics", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("uploadWithProgress", () => {
+  let xhrMock: {
+    open: ReturnType<typeof vi.fn>;
+    send: ReturnType<typeof vi.fn>;
+    setRequestHeader: ReturnType<typeof vi.fn>;
+    status: number;
+    responseText: string;
+    upload: { onprogress: ((e: { loaded: number; total: number; lengthComputable: boolean }) => void) | null };
+    onload: (() => void) | null;
+    onerror: (() => void) | null;
+    onabort: (() => void) | null;
+  };
+  let currentXHR: typeof xhrMock;
+
+  beforeEach(() => {
+    xhrMock = {
+      open: vi.fn(),
+      send: vi.fn(),
+      setRequestHeader: vi.fn(),
+      status: 200,
+      responseText: JSON.stringify({ id: "att-1" }),
+      upload: { onprogress: null },
+      onload: null,
+      onerror: null,
+      onabort: null,
+    };
+    currentXHR = xhrMock;
+    vi.stubGlobal(
+      "XMLHttpRequest",
+      class {
+        constructor() {
+          return currentXHR;
+        }
+      },
+    );
+    vi.stubGlobal("window", { location: { pathname: "/issues/abc" } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reports upload progress and resolves with the JSON body", async () => {
+    const progress: number[] = [];
+    const promise = api.uploadWithProgress(
+      "/companies/c/issues/i/attachments",
+      new FormData(),
+      (p) => progress.push(p),
+    );
+    // Simulate upload progress events, then a successful load.
+    xhrMock.upload.onprogress!({ loaded: 250, total: 1000, lengthComputable: true });
+    xhrMock.upload.onprogress!({ loaded: 500, total: 1000, lengthComputable: true });
+    xhrMock.onload!();
+    const result = await promise;
+    expect(result).toEqual({ id: "att-1" });
+    expect(progress).toEqual([25, 50]);
+    expect(xhrMock.open).toHaveBeenCalledWith("POST", expect.stringContaining("/companies/c/issues/i/attachments"));
+    expect(xhrMock.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips progress callbacks for non-length-computable uploads", async () => {
+    const progress: number[] = [];
+    const promise = api.uploadWithProgress(
+      "/companies/c/issues/i/attachments",
+      new FormData(),
+      (p) => progress.push(p),
+    );
+    xhrMock.upload.onprogress!({ loaded: 100, total: 0, lengthComputable: false });
+    xhrMock.onload!();
+    await promise;
+    expect(progress).toEqual([]);
+  });
+
+  it("rejects with ApiError on non-2xx with the server error message", async () => {
+    xhrMock.status = 413;
+    xhrMock.responseText = JSON.stringify({ error: "File too large" });
+    const promise = api.uploadWithProgress("/companies/c/issues/i/attachments", new FormData());
+    xhrMock.onload!();
+    await expect(promise).rejects.toMatchObject({
+      message: "File too large",
+      status: 413,
+    });
+  });
+
+  it("rejects on network error", async () => {
+    const promise = api.uploadWithProgress("/companies/c/issues/i/attachments", new FormData());
+    xhrMock.onerror!();
+    await expect(promise).rejects.toMatchObject({ message: "Network error during upload" });
+  });
+});
