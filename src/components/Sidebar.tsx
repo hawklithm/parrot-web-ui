@@ -20,6 +20,9 @@ import {
   Pin,
   MessagesSquare,
   GanttChartSquare,
+  ListChecks,
+  Activity,
+  Wrench,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -190,6 +193,9 @@ export function Sidebar() {
             badgeTone={inboxBadge.failedRuns > 0 ? "danger" : "default"}
             alert={inboxBadge.failedRuns > 0}
           />
+          <SidebarNavItem to="/decisions" label="Decisions" icon={ListChecks} />
+          <SidebarNavItem to="/status" label="Status cards" icon={Activity} />
+          <SidebarNavItem to="/apps" label="Apps & Tools" icon={Wrench} />
           {conferenceRoomChatEnabled ? (
             <SidebarNavItem to="/board-chat" label="Conference Room" icon={MessagesSquare} />
           ) : null}

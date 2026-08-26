@@ -37,6 +37,19 @@ import { ApprovalDetail } from "./pages/ApprovalDetail";
 import { Costs } from "./pages/Costs";
 import { Activity } from "./pages/Activity";
 import { Inbox } from "./pages/Inbox";
+import { WhatNeedsMe } from "./pages/WhatNeedsMe";
+import { StatusCards } from "./pages/StatusCards";
+import { ToolsCenter } from "./pages/ToolsCenter";
+import { Browse } from "./pages/apps/Browse";
+import { Connections } from "./pages/apps/Connections";
+import { AppsConnect } from "./pages/apps/AppsConnect";
+import { AppsReview } from "./pages/apps/AppsReview";
+import { AppDetail } from "./pages/apps/AppDetail";
+import { GatewaysList } from "./pages/apps/gateways/GatewaysList";
+import { GatewayDetail } from "./pages/apps/gateways/GatewayDetail";
+import { AdvancedToolsRoute } from "./pages/tools/AdvancedToolsRoute";
+import { ProfileDetailRoute } from "./pages/tools/profiles/ProfileDetailRoute";
+import { ProfileWizardRoute } from "./pages/tools/profiles/ProfileWizardRoute";
 import { BoardChat } from "./pages/BoardChat";
 import { CompanySettings } from "./pages/CompanySettings";
 import { CompanyEnvironments } from "./pages/CompanyEnvironments";
@@ -220,6 +233,25 @@ function boardRoutes() {
       <Route path="inbox/unread" element={<Inbox />} />
       <Route path="inbox/blocked" element={<Inbox />} />
       <Route path="inbox/all" element={<Inbox />} />
+      <Route path="decisions" element={<WhatNeedsMe />} />
+      <Route path="decisions/queues/:key" element={<WhatNeedsMe />} />
+      <Route path="status" element={<StatusCards />} />
+      <Route path="status/:cardId" element={<StatusCards />} />
+      <Route path="apps" element={<Browse />} />
+      <Route path="apps/browse" element={<Browse />} />
+      <Route path="apps/connections" element={<Connections />} />
+      <Route path="apps/connect" element={<AppsConnect />} />
+      <Route path="apps/connect/:appKey" element={<AppsConnect />} />
+      <Route path="apps/connect/:appKey/:stage" element={<AppsConnect />} />
+      <Route path="apps/review" element={<AppsReview />} />
+      <Route path="apps/gateways" element={<GatewaysList />} />
+      <Route path="apps/gateways/:gatewayId/:tab" element={<GatewayDetail />} />
+      <Route path="apps/:connectionId/:tab" element={<AppDetail />} />
+      <Route path="tools" element={<AdvancedToolsRoute />} />
+      <Route path="tools/:tab" element={<AdvancedToolsRoute />} />
+      <Route path="tools/profiles/new" element={<ProfileWizardRoute mode="new" />} />
+      <Route path="tools/profiles/:profileId/edit" element={<ProfileWizardRoute mode="edit" />} />
+      <Route path="tools/profiles/:profileId" element={<ProfileDetailRoute />} />
       <Route path="inbox/requests" element={<JoinRequestQueue />} />
       <Route path="inbox/new" element={<Navigate to="/inbox/mine" replace />} />
       <Route path="u/:userSlug" element={<UserProfile />} />

@@ -18,7 +18,10 @@ function projectPath(id: string, companyId?: string, suffix = "") {
 }
 
 export const projectsApi = {
-  list: (companyId: string) => api.get<Project[]>(`/companies/${companyId}/projects`),
+  list: (companyId: string, options: { includeArchived?: boolean } = {}) =>
+    api.get<Project[]>(
+      `/companies/${companyId}/projects${options.includeArchived ? "?includeArchived=true" : ""}`,
+    ),
   get: (id: string, companyId?: string) => api.get<Project>(projectPath(id, companyId)),
   create: (companyId: string, data: Record<string, unknown>) =>
     api.post<Project>(`/companies/${companyId}/projects`, data),

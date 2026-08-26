@@ -14,6 +14,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@paperclipai/shared": ["./src/lib/paperclip-tools-shared/index.ts"],
+      "@assistant-ui/react": ["./src/lib/assistant-ui-stub/index.ts"],
+      "parrot-adapter-utils": ["./src/lib/paperclip-adapter-utils/src/index.ts"],
       "lexical": ["./node_modules/lexical/index.d.ts"]
     }
   },

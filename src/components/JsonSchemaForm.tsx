@@ -107,6 +107,7 @@ export interface JsonSchemaFormProps {
   disabled?: boolean;
   /** Additional CSS class for the root container. */
   className?: string;
+  advancedLabel?: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -182,7 +182,8 @@ export const queryKeys = {
       ["environment-custom-image-setup-sessions", sessionId] as const,
   },
   projects: {
-    list: (companyId: string) => ["projects", companyId] as const,
+    list: (companyId: string, options: { includeArchived?: boolean } = {}) =>
+      ["projects", companyId, options.includeArchived === true] as const,
     detail: (id: string) => ["projects", "detail", id] as const,
   },
   cases: {
@@ -329,5 +330,38 @@ export const queryKeys = {
   },
   adapters: {
     all: ["adapters"] as const,
+  },
+  smokeLab: {
+    services: (companyId: string) => ["smoke-lab", companyId, "services"] as const,
+    runs: (companyId: string) => ["smoke-lab", companyId, "runs"] as const,
+    run: (companyId: string, runId: string) => ["smoke-lab", companyId, "run", runId] as const,
+  },
+  apps: {
+    gallery: (companyId: string) => ["apps", "gallery", companyId] as const,
+    attention: (companyId: string) => ["apps", "attention", companyId] as const,
+  },
+  tools: {
+    applications: (companyId: string) => ["tools", "applications", companyId] as const,
+    connections: (companyId: string) => ["tools", "connections", companyId] as const,
+    connection: (id: string) => ["tools", "connection", id] as const,
+    connectionInstalls: (id: string) => ["tools", "connection-installs", id] as const,
+    connectionActivity: (id: string) => ["tools", "connection-activity", id] as const,
+    catalog: (id: string) => ["tools", "catalog", id] as const,
+    policies: (companyId: string) => ["tools", "policies", companyId] as const,
+    profiles: (companyId: string) => ["tools", "profiles", companyId] as const,
+    effectiveProfilesForAgent: (companyId: string, agentId: string) => ["tools", "effective", companyId, agentId] as const,
+    gateways: (companyId: string) => ["tools", "gateways", companyId] as const,
+    actionRequests: (companyId: string, status?: string) => ["tools", "action-requests", companyId, status ?? "all"] as const,
+    activity: (companyId: string, filters: Record<string, unknown> = {}) =>
+      ["tools", "activity", companyId, filters] as const,
+    audit: (companyId: string, limit?: number) => ["tools", "audit", companyId, limit ?? 100] as const,
+    smokeLab: (companyId: string, suffix = "all") => ["tools", "smoke-lab", companyId, suffix] as const,
+    runtimeHealth: (companyId: string) => ["tools", "runtime-health", companyId] as const,
+    runtimeSlots: (companyId: string) => ["tools", "runtime-slots", companyId] as const,
+    stdioTemplates: (companyId: string) => ["tools", "stdio-templates", companyId] as const,
+    trustRules: (companyId: string) => ["tools", "trust-rules", companyId] as const,
+    testAgents: (connectionId: string) => ["tools", "test-agents", connectionId] as const,
+    testCallStatus: (connectionId: string, callId: string) => ["tools", "test-call", connectionId, callId] as const,
+    profileNewTools: (profileId: string) => ["tools", "profile-new-tools", profileId] as const,
   },
 };
