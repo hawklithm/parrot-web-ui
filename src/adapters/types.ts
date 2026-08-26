@@ -34,6 +34,8 @@ export interface AdapterConfigFieldsProps {
   models: { id: string; label: string }[];
   /** When true, hides the instructions file path field (e.g. during import where it's set automatically) */
   hideInstructionsFile?: boolean;
+  /** Whether the server currently exposes a real ACP executor for this adapter. */
+  supportsAcp?: boolean;
 }
 
 export interface UIAdapterModule extends TranscriptParserSource {

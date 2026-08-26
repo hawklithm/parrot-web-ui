@@ -77,16 +77,20 @@ export function ClaudeLocalAdvancedFields({
   config,
   eff,
   mark,
+  supportsAcp = false,
 }: AdapterConfigFieldsProps) {
   const rawEngine = isCreate
     ? values!.claudeEngine ?? "auto"
     : eff("adapterConfig", "engine", String(config.engine ?? "auto"));
-  const engine = rawEngine === "acp" || rawEngine === "cli" ? rawEngine : "auto";
-  const acpSelected = engine === "acp";
+  const engine = rawEngine === "cli" || (supportsAcp && rawEngine === "acp") ? rawEngine : "auto";
+  const acpSelected = supportsAcp && engine === "acp";
+  const engineHint = supportsAcp
+    ? "Auto uses ACP when prerequisites pass and falls back to Claude CLI with diagnostics."
+    : "The server currently executes Claude through the local CLI; ACP is unavailable.";
 
   return (
     <>
-      <Field label="Execution engine" hint="Auto uses ACP when prerequisites pass and falls back to Claude CLI with diagnostics.">
+      <Field label="Execution engine" hint={engineHint}>
         <select
           className={inputClass}
           value={engine}
@@ -99,7 +103,7 @@ export function ClaudeLocalAdvancedFields({
         >
           <option value="auto">Auto (ACP preferred)</option>
           <option value="cli">Claude CLI</option>
-          <option value="acp">ACP</option>
+          {supportsAcp && <option value="acp">ACP</option>}
         </select>
       </Field>
       {acpSelected && (

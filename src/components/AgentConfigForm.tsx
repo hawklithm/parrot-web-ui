@@ -504,6 +504,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     mark: mark as (group: "adapterConfig", field: string, value: unknown) => void,
     models,
     hideInstructionsFile,
+    supportsAcp: adapterCaps.supportsAcp,
   };
 
   // Section toggle state — advanced always starts collapsed

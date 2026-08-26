@@ -17,8 +17,11 @@ const ALL_FALSE: AdapterCapabilities = {
  * return correct values on first render before the /api/adapters call resolves.
  */
 const KNOWN_DEFAULTS: Record<string, AdapterCapabilities> = {
-  claude_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: false, supportsModelProfiles: true, supportsAcp: true },
-  codex_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: false, supportsModelProfiles: true, supportsAcp: true },
+  // ACP is only enabled when the server advertises a real executor. The
+  // current Rust runtime is CLI-only, so the cold-load fallback must not
+  // expose an ACP configuration path before /api/adapters resolves.
+  claude_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: false, supportsModelProfiles: true, supportsAcp: false },
+  codex_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: false, supportsModelProfiles: true, supportsAcp: false },
   cursor: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: true, supportsModelProfiles: true, supportsAcp: false },
   gemini_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: true, supportsModelProfiles: true, supportsAcp: true },
   grok_local: { supportsInstructionsBundle: true, supportsSkills: true, supportsLocalAgentJwt: true, requiresMaterializedRuntimeSkills: true, supportsModelProfiles: false, supportsAcp: false },

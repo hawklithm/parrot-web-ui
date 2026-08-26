@@ -30,12 +30,16 @@ export function CodexLocalConfigFields({
   mark,
   models,
   hideInstructionsFile,
+  supportsAcp = false,
 }: AdapterConfigFieldsProps) {
   const rawEngine = isCreate
     ? values!.codexEngine ?? "auto"
     : eff("adapterConfig", "engine", String(config.engine ?? "auto"));
-  const engine = rawEngine === "acp" || rawEngine === "cli" ? rawEngine : "auto";
-  const acpSelected = engine === "acp";
+  const engine = rawEngine === "cli" || (supportsAcp && rawEngine === "acp") ? rawEngine : "auto";
+  const acpSelected = supportsAcp && engine === "acp";
+  const engineHint = supportsAcp
+    ? "Auto uses ACP when prerequisites pass and falls back to Codex CLI with diagnostics."
+    : "The server currently executes Codex through the local CLI; ACP is unavailable.";
   const bypassEnabled =
     config.dangerouslyBypassApprovalsAndSandbox === true || config.dangerouslyBypassSandbox === true;
   const fastModeEnabled = isCreate
@@ -55,7 +59,7 @@ export function CodexLocalConfigFields({
 
   return (
     <>
-      <Field label="Execution engine" hint="Auto uses ACP when prerequisites pass and falls back to Codex CLI with diagnostics.">
+      <Field label="Execution engine" hint={engineHint}>
         <select
           className={inputClass}
           value={engine}
@@ -68,7 +72,7 @@ export function CodexLocalConfigFields({
         >
           <option value="auto">Auto (ACP preferred)</option>
           <option value="cli">Codex CLI</option>
-          <option value="acp">ACP</option>
+          {supportsAcp && <option value="acp">ACP</option>}
         </select>
       </Field>
       {acpSelected && (
