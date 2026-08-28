@@ -298,8 +298,8 @@ function modeLabel(managedMode: SecretManagedMode) {
 
 function modeDescription(managedMode: SecretManagedMode) {
   return managedMode === "paperclip_managed"
-    ? "Paperclip owns create and rotation writes for this provider secret."
-    : "Paperclip resolves this provider reference but does not rotate the provider value.";
+    ? "Parrot owns create and rotation writes for this provider secret."
+    : "Parrot resolves this provider reference but does not rotate the provider value.";
 }
 
 function statusLabel(status: SecretStatus) {
@@ -2657,7 +2657,7 @@ function SecretsHowToUse() {
           <span className="font-medium text-foreground">Secret</span>, and select the stored secret version.
         </p>
         <p>
-          Paperclip resolves the value server-side when the run starts and injects it as that env var. Project env
+          Parrot resolves the value server-side when the run starts and injects it as that env var. Project env
           applies to every task in the project and overrides agent env on matching keys.
         </p>
       </div>

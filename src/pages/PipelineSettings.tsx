@@ -1904,7 +1904,7 @@ export function PipelineSettings() {
     onError: async (error) => {
       pushToast({
         title: "Failed to save stage",
-        body: error instanceof Error ? error.message : "Paperclip could not save the stage.",
+        body: error instanceof Error ? error.message : "Parrot could not save the stage.",
         tone: "error",
       });
     },
@@ -1937,7 +1937,7 @@ export function PipelineSettings() {
           ? error.message
           : error instanceof Error
             ? error.message
-            : "Paperclip could not save the stage secrets.",
+            : "Parrot could not save the stage secrets.",
         tone: "error",
       });
     },
@@ -2014,7 +2014,7 @@ export function PipelineSettings() {
     onError: (error) => {
       pushToast({
         title: "Failed to delete stage",
-        body: error instanceof Error ? error.message : "Paperclip could not delete the stage.",
+        body: error instanceof Error ? error.message : "Parrot could not delete the stage.",
         tone: "error",
       });
     },
@@ -2046,7 +2046,7 @@ export function PipelineSettings() {
       setStrictTransitionsEnabled(pipeline?.enforceTransitions ?? false);
       pushToast({
         title: "Failed to update transition rules",
-        body: error instanceof Error ? error.message : "Paperclip could not update transition rules.",
+        body: error instanceof Error ? error.message : "Parrot could not update transition rules.",
         tone: "error",
       });
     },

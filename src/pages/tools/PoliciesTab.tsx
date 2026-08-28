@@ -1168,7 +1168,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
               <DialogDescription>
                 {confirm.kind === "delete-rule"
                   ? `This rule matched ${confirm.hits} ${confirm.hits === 1 ? "time" : "times"} in the last 24 hours. Deleting it may change what agents can do.`
-                  : "Paperclip will ask again the next time this action needs approval."}
+                  : "Parrot will ask again the next time this action needs approval."}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

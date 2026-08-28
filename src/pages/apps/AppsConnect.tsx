@@ -260,7 +260,7 @@ export function AppsConnect() {
           ? "Your authorization expired or was revoked. Reconnect to continue."
           : error instanceof Error
             ? error.message
-            : "Paperclip couldn’t start secure sign-in. Try again.",
+            : "Parrot couldn't start secure sign-in. Try again.",
       );
     },
   });
@@ -322,7 +322,7 @@ export function AppsConnect() {
             ? "Your authorization expired or was revoked. Reconnect to continue."
             : error instanceof Error
               ? error.message
-              : "Paperclip couldn’t start secure sign-in. Try again.",
+              : "Parrot couldn't start secure sign-in. Try again.",
         );
         return;
       }
@@ -377,7 +377,7 @@ export function AppsConnect() {
     if (directOAuth && directOAuthRetryingRef.current) return;
     if (directOAuth && (applicationsQuery.isError || connectionsQuery.isError)) {
       setOAuthPhase("error");
-      setOAuthError("Paperclip couldn’t check for an existing connection. Try again.");
+      setOAuthError("Parrot couldn't check for an existing connection. Try again.");
       return;
     }
 
@@ -473,7 +473,7 @@ export function AppsConnect() {
             ]);
             if (applicationsResult.isError || connectionsResult.isError) {
               setOAuthPhase("error");
-              setOAuthError("Paperclip couldn’t check for an existing connection. Try again.");
+              setOAuthError("Parrot couldn't check for an existing connection. Try again.");
               return;
             }
             const refreshedConnection = reusableOAuthConnection(
@@ -773,7 +773,7 @@ export function OAuthConnectStateScreen({
 }) {
   const status = phase === "entry"
     ? {
-        title: `Connect ${entry.name} to Paperclip`,
+        title: `Connect ${entry.name} to Parrot`,
         body: `Paperclip will open ${entry.name} so you can choose a workspace and approve access.`,
       }
     : phase === "starting"
@@ -788,7 +788,7 @@ export function OAuthConnectStateScreen({
           }
         : {
             title: `${entry.name} couldn’t connect`,
-            body: error ?? "Paperclip couldn’t start secure sign-in. Try again.",
+            body: error ?? "Parrot couldn't start secure sign-in. Try again.",
           };
 
   return (
@@ -881,7 +881,7 @@ function ZapierConnectStep({
           autoFocus
         />
         <p className="mt-2 text-xs text-muted-foreground">
-          The token is part of the URL. Paperclip stores it securely and checks the connection before enabling actions.
+          The token is part of the URL. Parrot stores it securely and checks the connection before enabling actions.
         </p>
         {link.trim() && !isZapierLink && (
           <p className="mt-2 text-xs text-destructive">Paste a valid Zapier URL to continue.</p>
@@ -988,7 +988,7 @@ function GalleryStep({
               disabled={oauthBlocked || unavailable}
               title={
                 unavailable
-                  ? `${app.name} isn't configured on this instance yet. Ask your Paperclip admin.`
+                  ? `${app.name} isn't configured on this instance yet. Ask your Parrot admin.`
                   : undefined
               }
               onClick={() => onPick(app)}
@@ -1710,7 +1710,7 @@ function WhoStep({
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anyone you’ve added to Paperclip can use {appName} in their tasks. This is what most teams want.
+                Anyone you have added to Parrot can use {appName} in their tasks. This is what most teams want.
               </p>
             </div>
           </button>

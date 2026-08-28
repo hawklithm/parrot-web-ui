@@ -1442,7 +1442,7 @@ export function CompanyEnvironments() {
                         })()}
                       </div>
                     ) : (
-                      <div className="text-xs text-muted-foreground">Runs on this Paperclip host.</div>
+                      <div className="text-xs text-muted-foreground">Runs on this Parrot host.</div>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">

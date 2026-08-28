@@ -159,7 +159,7 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
             <h1 className="text-lg font-semibold">Cloud upstream</h1>
           </div>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Push {selectedCompanyName} into a Paperclip Cloud stack. Automations stay paused until activation.
+            Push {selectedCompanyName} into a Parrot Cloud stack. Automations stay paused until activation.
           </p>
         </div>
         {connection?.target.origin ? (
@@ -211,7 +211,7 @@ function CloudUpstreamRender({ fixture }: { fixture: Fixture }) {
               <Input
                 defaultValue="https://paperclip.paperclip.app/PC521D/dashboard"
                 placeholder="https://paperclip.paperclip.app/PC521D/dashboard"
-                aria-label="Paperclip Cloud stack URL"
+                aria-label="Parrot Cloud stack URL"
                 autoFocus
               />
               <Button disabled>
@@ -490,7 +490,7 @@ function formatBytes(value: number) {
 const STACK_TARGET = {
   stackId: "stk_2vKqz9D8mNFqQ7Rp",
   stackSlug: "paperclip-prod",
-  stackDisplayName: "Paperclip Prod",
+  stackDisplayName: "Parrot Prod",
   companyId: "co_4hT2yX",
   primaryHost: "paperclip.paperclip.app",
   origin: "https://paperclip.paperclip.app",
