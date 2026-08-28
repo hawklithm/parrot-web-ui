@@ -95,6 +95,7 @@ import { copyTextToClipboard } from "../lib/clipboard";
 import { PageTabBar } from "../components/PageTabBar";
 import { ImportFromVaultDialog } from "./secrets/ImportFromVaultDialog";
 import { MyUserSecretsTab } from "./secrets/MyUserSecretsTab";
+import { SecretProposalsTab } from "./secrets/SecretProposalsTab";
 import { SetMyUserSecretDialog } from "./secrets/SetMyUserSecretDialog";
 import {
   coverageSummaryLabel,
@@ -105,7 +106,7 @@ import type { MyUserSecretEntry } from "../api/secrets";
 type CreateMode = "managed" | "external";
 type SecretValueProvider = "company" | "user";
 type ProvidedByFilter = "all" | SecretValueProvider;
-type SecretsTab = "secrets" | "my-secrets" | "vaults";
+type SecretsTab = "secrets" | "my-secrets" | "vaults" | "proposals";
 
 type UnifiedSecretRow =
   | { id: string; kind: "company"; secret: CompanySecret }
@@ -1448,6 +1449,7 @@ export function Secrets() {
             { value: "secrets", label: "Secrets" },
             { value: "my-secrets", label: "My secrets" },
             { value: "vaults", label: "Provider vaults" },
+            { value: "proposals", label: "Proposals" },
           ]}
           align="start"
           value={activeTab}
@@ -1717,6 +1719,9 @@ export function Secrets() {
               null
             }
           />
+        </TabsContent>
+        <TabsContent value="proposals" className="min-h-0 flex-1 overflow-y-auto">
+          {selectedCompanyId && <SecretProposalsTab companyId={selectedCompanyId} />}
         </TabsContent>
       </Tabs>
 
