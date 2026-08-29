@@ -1,200 +1,279 @@
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search, XCircle } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search, X } from "lucide-react";
+import type {
+  CompanySkillProjectScanCandidate,
+  CompanySkillProjectScanResult,
+} from "../../lib/paperclip-shared/src";
 import { companySkillsApi } from "../../api/companySkills";
-import type { CompanySkillProjectScanResult } from "../../lib/paperclip-shared/src";
+import { Button } from "../../components/ui/button";
+import { Checkbox } from "../../components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 
 interface Props {
   companyId: string;
+  open: boolean;
   onClose: () => void;
 }
 
-export function ImportSkillsFromProjectDialog({ companyId, onClose }: Props) {
-  const [scanResult, setScanResult] = useState<CompanySkillProjectScanResult | null>(null);
+function candidateKey(candidate: Pick<CompanySkillProjectScanCandidate, "workspaceId" | "relativePath">) {
+  return `${candidate.workspaceId}:${candidate.relativePath}`;
+}
+
+function candidateLabel(candidate: CompanySkillProjectScanCandidate) {
+  return `${candidate.projectName} / ${candidate.workspaceName} / ${candidate.relativePath}`;
+}
+
+export function ImportSkillsFromProjectDialog({ companyId, open, onClose }: Props) {
   const queryClient = useQueryClient();
+  const [scanResult, setScanResult] = useState<CompanySkillProjectScanResult | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) {
+      setScanResult(null);
+      setSelectedKeys(new Set());
+    }
+  }, [open]);
 
   const scanMutation = useMutation({
-    mutationFn: () => companySkillsApi.scanProjects(companyId, {}),
-    onSuccess: (data) => {
-      setScanResult(data);
-      queryClient.invalidateQueries({ queryKey: ["company-skills", companyId] });
+    mutationFn: () => companySkillsApi.scanProjects(companyId, { mode: "preview" }),
+    onSuccess: (result) => {
+      setScanResult(result);
+      setSelectedKeys(new Set(
+        result.candidates
+          .filter((candidate) => candidate.status === "new")
+          .map(candidateKey),
+      ));
     },
   });
 
   const importMutation = useMutation({
-    mutationFn: () => companySkillsApi.scanProjects(companyId, {}),
-    onSuccess: (data) => {
-      setScanResult(data);
-      queryClient.invalidateQueries({ queryKey: ["company-skills", companyId] });
+    mutationFn: () => {
+      if (!scanResult) throw new Error("Scan project workspaces before importing skills.");
+      const selection = scanResult.candidates
+        .filter((candidate) => selectedKeys.has(candidateKey(candidate)))
+        .map(({ workspaceId, relativePath, slug }) => ({
+          workspaceId,
+          path: relativePath,
+          slug,
+        }));
+      return companySkillsApi.scanProjects(companyId, { mode: "import", selection });
+    },
+    onSuccess: async (result) => {
+      setScanResult(result);
+      setSelectedKeys(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["company-skills", companyId] });
     },
   });
 
-  const handleScan = () => {
-    scanMutation.mutate();
-  };
+  const selectableCandidates = useMemo(
+    () => scanResult?.candidates.filter((candidate) => candidate.status === "new") ?? [],
+    [scanResult],
+  );
+  const selectedCount = selectableCandidates.filter((candidate) => selectedKeys.has(candidateKey(candidate))).length;
+  const isPending = scanMutation.isPending || importMutation.isPending;
+
+  function toggleCandidate(candidate: CompanySkillProjectScanCandidate) {
+    const key = candidateKey(candidate);
+    setSelectedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedKeys(new Set(selectableCandidates.map(candidateKey)));
+  }
+
+  function clearSelection() {
+    setSelectedKeys(new Set());
+  }
+
+  const error = scanMutation.error ?? importMutation.error;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-auto max-w-2xl rounded-lg border bg-background p-6 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Import Skills from Projects</h2>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-muted-foreground hover:bg-muted"
-          >
-            <XCircle className="h-5 w-5" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
+      <DialogContent className="max-h-[min(720px,90vh)] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Import skills from project workspaces</DialogTitle>
+          <DialogDescription>
+            Scan local project workspaces, review discovered skill files, then import only the selected entries.
+          </DialogDescription>
+        </DialogHeader>
 
         {!scanResult && !scanMutation.isPending && (
-          <div className="flex flex-col items-center gap-4 py-8">
-            <Search className="h-12 w-12 text-muted-foreground" />
-            <p className="text-center text-sm text-muted-foreground">
-              Scan your project workspaces for skill files that can be imported.
+          <div className="flex flex-col items-center gap-4 py-10 text-center">
+            <Search className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+            <p className="max-w-md text-sm text-muted-foreground">
+              Project skills are previewed first so existing skills and conflicts stay visible before any files are imported.
             </p>
-            <button
-              onClick={handleScan}
-              className="inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Scan projects
-            </button>
+            <Button onClick={() => scanMutation.mutate()}>
+              <Search className="mr-2 h-4 w-4" aria-hidden="true" />
+              Scan workspaces
+            </Button>
           </div>
         )}
 
         {scanMutation.isPending && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Scanning project workspaces…</p>
+          <div className="flex items-center justify-center gap-3 py-10 text-sm text-muted-foreground" role="status" aria-live="polite">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            Scanning project workspaces...
           </div>
         )}
 
-        {scanMutation.isError && (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-            <p className="text-sm text-destructive">
-              Failed to scan projects: {scanMutation.error?.message}
-            </p>
-            <button
-              onClick={handleScan}
-              className="inline-flex items-center gap-2 rounded bg-primary px-3 py-1 text-sm text-primary-foreground"
-            >
-              Retry
-            </button>
+        {error && (
+          <div className="flex items-start gap-3 rounded-md border border-destructive/40 p-4 text-sm" role="alert">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-destructive">Project skill scan failed</p>
+              <p className="mt-1 break-words text-muted-foreground">
+                {error instanceof Error ? error.message : "Unable to scan project workspaces."}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => scanMutation.mutate()} title="Retry scan" aria-label="Retry scan">
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            </Button>
           </div>
         )}
 
-        {scanResult && (
-          <div className="flex flex-col gap-4">
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-2xl font-bold">{scanResult.scannedProjects}</div>
-                <div className="text-xs text-muted-foreground">Projects</div>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-2xl font-bold">{scanResult.scannedWorkspaces}</div>
-                <div className="text-xs text-muted-foreground">Workspaces</div>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-2xl font-bold">{scanResult.discovered}</div>
-                <div className="text-xs text-muted-foreground">Discovered</div>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <div className="text-2xl font-bold">{scanResult.imported.length}</div>
-                <div className="text-xs text-muted-foreground">Imported</div>
-              </div>
+        {scanResult && !scanMutation.isPending && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-5">
+              <Summary label="Projects" value={scanResult.scannedProjects} />
+              <Summary label="Workspaces" value={scanResult.scannedWorkspaces} />
+              <Summary label="Found" value={scanResult.discovered} />
+              <Summary label="Selected" value={selectedCount} />
+              <Summary label="Imported" value={scanResult.imported.length + scanResult.updated.length} />
             </div>
 
-            {/* Conflicts */}
-            {scanResult.conflicts.length > 0 && (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-amber-600">
-                  Conflicts ({scanResult.conflicts.length})
-                </h3>
-                <div className="flex flex-col gap-1">
-                  {scanResult.conflicts.map((c, i) => (
-                    <div
-                      key={i}
-                      className="rounded border border-amber-200 bg-amber-50 p-2 text-xs"
-                    >
-                      <span className="font-medium">{c.slug}</span> — {c.reason}
-                    </div>
-                  ))}
+            {selectableCandidates.length > 0 ? (
+              <section aria-labelledby="project-skill-candidates-heading" className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 id="project-skill-candidates-heading" className="text-sm font-medium">
+                    New skill files ({selectableCandidates.length})
+                  </h3>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={selectAll}>Select all</Button>
+                    <Button variant="ghost" size="sm" onClick={clearSelection}>Clear</Button>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Skipped */}
-            {scanResult.skipped.length > 0 && (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-                  Skipped ({scanResult.skipped.length})
-                </h3>
-                <div className="flex flex-col gap-1">
-                  {scanResult.skipped.map((s, i) => (
-                    <div key={i} className="rounded border p-2 text-xs text-muted-foreground">
-                      <span className="font-medium">{s.projectName}</span> — {s.reason}
-                    </div>
-                  ))}
+                <div className="divide-y rounded-md border">
+                  {selectableCandidates.map((candidate) => {
+                    const key = candidateKey(candidate);
+                    const checked = selectedKeys.has(key);
+                    return (
+                      <label key={key} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/40">
+                        <Checkbox checked={checked} onCheckedChange={() => toggleCandidate(candidate)} aria-label={`Select ${candidate.name}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">{candidate.name}</span>
+                          <span className="mt-0.5 block break-words text-xs text-muted-foreground">{candidateLabel(candidate)}</span>
+                          {candidate.description ? <span className="mt-1 block text-xs text-muted-foreground">{candidate.description}</span> : null}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
-              </div>
-            )}
+              </section>
+            ) : null}
 
-            {/* Imported */}
-            {scanResult.imported.length > 0 && (
-              <div>
-                <h3 className="mb-2 flex items-center gap-1 text-sm font-medium text-green-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Imported ({scanResult.imported.length})
-                </h3>
-                <div className="flex flex-col gap-1">
-                  {scanResult.imported.map((skill) => (
-                    <div
-                      key={skill.id}
-                      className="rounded border p-2 text-sm"
-                    >
-                      {skill.name}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {scanResult.conflicts.length > 0 ? (
+              <ResultSection title={`Conflicts (${scanResult.conflicts.length})`} tone="warning">
+                {scanResult.conflicts.map((conflict) => (
+                  <div key={`${conflict.workspaceId}:${conflict.path}:${conflict.slug}`} className="text-xs">
+                    <span className="font-medium">{conflict.slug}</span>
+                    <span className="text-muted-foreground">: {conflict.reason}</span>
+                  </div>
+                ))}
+              </ResultSection>
+            ) : null}
 
-            {/* Warnings */}
-            {scanResult.warnings.length > 0 && (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-amber-600">
-                  Warnings ({scanResult.warnings.length})
-                </h3>
-                <ul className="list-inside list-disc text-xs text-muted-foreground">
-                  {scanResult.warnings.map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {scanResult.skipped.length > 0 ? (
+              <ResultSection title={`Skipped (${scanResult.skipped.length})`}>
+                {scanResult.skipped.map((skipped, index) => (
+                  <div key={`${skipped.workspaceId ?? "workspace"}:${skipped.path ?? index}`} className="text-xs text-muted-foreground">
+                    {skipped.projectName ?? "Unknown project"}: {skipped.reason}
+                  </div>
+                ))}
+              </ResultSection>
+            ) : null}
 
-            {/* Actions */}
-            <div className="flex items-center justify-between border-t pt-4">
-              <button
-                onClick={handleScan}
-                disabled={scanMutation.isPending}
-                className="inline-flex items-center gap-1 rounded px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted disabled:opacity-50"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Re-scan
-              </button>
-              <button
-                onClick={onClose}
-                className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-              >
-                Done
-              </button>
-            </div>
+            {(scanResult.imported.length > 0 || scanResult.updated.length > 0) ? (
+              <ResultSection title="Imported" tone="success">
+                {[...scanResult.imported, ...scanResult.updated].map((skill) => (
+                  <div key={skill.id} className="flex items-center gap-2 text-xs">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>{skill.name}</span>
+                  </div>
+                ))}
+              </ResultSection>
+            ) : null}
+
+            {scanResult.warnings.length > 0 ? (
+              <ResultSection title={`Warnings (${scanResult.warnings.length})`} tone="warning">
+                {scanResult.warnings.map((warning) => <div key={warning} className="text-xs">{warning}</div>)}
+              </ResultSection>
+            ) : null}
           </div>
         )}
-      </div>
+
+        <DialogFooter>
+          {scanResult ? (
+            <Button variant="outline" onClick={() => scanMutation.mutate()} disabled={isPending}>
+              <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+              Re-scan
+            </Button>
+          ) : null}
+          <Button onClick={() => importMutation.mutate()} disabled={!scanResult || selectedCount === 0 || isPending}>
+            {importMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+            Import selected ({selectedCount})
+          </Button>
+          <Button variant="ghost" onClick={onClose} disabled={isPending}>
+            <X className="mr-2 h-4 w-4" aria-hidden="true" />
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Summary({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border px-2 py-2">
+      <div className="text-lg font-semibold">{value}</div>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
     </div>
+  );
+}
+
+function ResultSection({
+  title,
+  tone = "default",
+  children,
+}: {
+  title: string;
+  tone?: "default" | "success" | "warning";
+  children: ReactNode;
+}) {
+  const toneClass = tone === "success"
+    ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+    : tone === "warning"
+      ? "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300"
+      : "border-border";
+  return (
+    <section className={`space-y-2 rounded-md border p-3 ${toneClass}`}>
+      <h3 className="text-sm font-medium">{title}</h3>
+      <div className="space-y-1">{children}</div>
+    </section>
   );
 }
