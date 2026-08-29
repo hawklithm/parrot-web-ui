@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { ChoosePathButton } from "@/components/PathInstructionsModal";
 import { invalidateDynamicParser } from "@/adapters/dynamic-loader";
 import { invalidateConfigSchemaCache } from "@/adapters/schema-config-fields";
+import { useAdapterCapabilities } from "@/adapters/use-adapter-capabilities";
 
 function AdapterRow({
   adapter,
@@ -255,6 +256,7 @@ function ReinstallDialog({
 }
 
 export function AdapterManager() {
+  const getAdapterCapabilities = useAdapterCapabilities();
   const { selectedCompany } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
@@ -617,14 +619,7 @@ export function AdapterManager() {
                   modelsCount: 0,
                   loaded: true,
                   disabled: virtual.menuDisabled,
-                  capabilities: {
-                    supportsInstructionsBundle: false,
-                    supportsSkills: false,
-                    supportsLocalAgentJwt: false,
-                    requiresMaterializedRuntimeSkills: false,
-                    supportsModelProfiles: false,
-                    supportsAcp: false,
-                  },
+                  capabilities: getAdapterCapabilities(virtual.type),
                 }}
                 canRemove={false}
                 onToggle={(type, disabled) => toggleMutation.mutate({ type, disabled })}

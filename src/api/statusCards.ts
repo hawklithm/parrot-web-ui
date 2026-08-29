@@ -13,7 +13,6 @@ export type StatusCard = {
   summaryMarkdown: string | null;
   summaryCompiledAt: string | null;
   updatedAt: string;
-  [key: string]: unknown;
 };
 
 export type StatusCardInput = {
