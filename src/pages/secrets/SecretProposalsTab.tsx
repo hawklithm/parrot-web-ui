@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  AlertCircle,
   CheckCircle2,
   Clock,
   ExternalLink,
@@ -20,6 +21,8 @@ interface Props {
   companyId: string;
 }
 
+type ProposalFilter = "pending" | "approved" | "rejected" | "expired" | "withdrawn" | "all";
+
 const statusIcon: Record<string, typeof CheckCircle2> = {
   pending: Clock,
   approved: CheckCircle2,
@@ -37,14 +40,14 @@ const statusLabel: Record<string, string> = {
 };
 
 export function SecretProposalsTab({ companyId }: Props) {
-  const [filter, setFilter] = useState<string>("pending");
+  const [filter, setFilter] = useState<ProposalFilter>("pending");
   const queryClient = useQueryClient();
 
-  const { data: proposals, isLoading } = useQuery({
+  const { data: proposals = [], isLoading, isError, error } = useQuery({
     queryKey: ["secret-proposals", companyId, filter],
     queryFn: () =>
       secretProposalsApi.list(companyId, {
-        status: filter === "all" ? undefined : (filter as any),
+        status: filter === "all" ? undefined : filter,
       }),
   });
 
@@ -72,11 +75,19 @@ export function SecretProposalsTab({ companyId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["secret-proposals", companyId] }),
   });
 
+  const mutationError = approveMutation.error ?? rejectMutation.error;
+  const loadError = isError
+    ? error instanceof Error ? error.message : "Unable to load proposals."
+    : null;
+  const actionError = mutationError
+    ? mutationError instanceof Error ? mutationError.message : "Proposal action failed."
+    : null;
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Status filter tabs */}
       <div className="flex gap-2 border-b pb-2">
-        {["pending", "approved", "rejected", "all"].map((f) => (
+        {(["pending", "approved", "rejected", "expired", "withdrawn", "all"] satisfies ProposalFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -91,11 +102,18 @@ export function SecretProposalsTab({ companyId }: Props) {
         ))}
       </div>
 
-      {isLoading ? (
+        {loadError || actionError ? (
+          <div className="flex items-start gap-2 border border-destructive/40 p-3 text-sm text-destructive" role="alert">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{loadError ?? actionError}</span>
+          </div>
+        ) : null}
+
+        {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : !proposals || proposals.length === 0 ? (
+        ) : proposals.length === 0 ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
           {filter === "pending"
             ? "No pending proposals."
@@ -166,7 +184,9 @@ export function SecretProposalsTab({ companyId }: Props) {
                             onClick={() =>
                               approveMutation.mutate({
                                 proposalId: proposal.id,
-                                input: {},
+                                input: proposal.kind === "binding" && proposal.secretProposalId
+                                  ? { cascade: true }
+                                  : {},
                               })
                             }
                             className="inline-flex items-center gap-1 rounded bg-green-600 px-3 py-1 text-xs text-white transition-colors hover:bg-green-700 disabled:opacity-50"
