@@ -153,6 +153,9 @@ export interface CompanySkillVersion {
   companySkillId: string;
   revisionNumber: number;
   label: string | null;
+  releaseId?: string | null;
+  releaseName?: string | null;
+  releasedAt?: Date | string | null;
   fileInventory: CompanySkillVersionFileInventoryEntry[];
   authorAgentId: string | null;
   authorUserId: string | null;

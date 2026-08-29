@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent } from "../../lib/paperclip-shared/src";
+import type { Agent, AgentDesiredSkillEntry } from "../../lib/paperclip-shared/src";
 import { AgentSkillsTab } from "./AgentSkillsTab";
 
 async function act(callback: () => void | Promise<void>) {
@@ -23,8 +23,14 @@ async function flush() {
 }
 
 const skillsMock = vi.fn<(agentId: string, companyId?: string) => Promise<unknown>>();
-const syncSkillsMock = vi.fn<(agentId: string, desired: string[], companyId?: string) => Promise<unknown>>();
+const syncSkillsMock = vi.fn<(
+  agentId: string,
+  desired: Array<string | AgentDesiredSkillEntry>,
+  companyId?: string,
+) => Promise<unknown>>();
 const companySkillsListMock = vi.fn<(companyId: string) => Promise<unknown[]>>();
+const companySkillVersionsMock = vi.fn<(companyId: string, skillId: string) => Promise<unknown[]>>();
+const experimentalSettingsMock = vi.fn<() => Promise<unknown>>();
 
 vi.mock("@/lib/router", () => ({
   Link: ({ to, children, ...props }: { to: string; children: ReactNode }) => (
@@ -41,7 +47,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("../../api/agents", () => ({
   agentsApi: {
     skills: (agentId: string, companyId?: string) => skillsMock(agentId, companyId),
-    syncSkills: (agentId: string, desired: string[], companyId?: string) =>
+    syncSkills: (agentId: string, desired: Array<string | AgentDesiredSkillEntry>, companyId?: string) =>
       syncSkillsMock(agentId, desired, companyId),
   },
 }));
@@ -49,7 +55,29 @@ vi.mock("../../api/agents", () => ({
 vi.mock("../../api/companySkills", () => ({
   companySkillsApi: {
     list: (companyId: string) => companySkillsListMock(companyId),
+    versions: (companyId: string, skillId: string) => companySkillVersionsMock(companyId, skillId),
   },
+}));
+
+vi.mock("../../api/instanceSettings", () => ({
+  instanceSettingsApi: {
+    getExperimental: () => experimentalSettingsMock(),
+  },
+}));
+
+vi.mock("./AgentSkillReleasePicker", () => ({
+  releaseShortLabel: (release: { releaseName?: string | null }) => release.releaseName ?? "Release",
+  AgentSkillReleasePicker: ({
+    onChange,
+    value,
+  }: {
+    onChange: (versionId: string | null) => void;
+    value: string | null;
+  }) => (
+    <button type="button" data-testid="release-picker" onClick={() => onChange("version-7")}>
+      {value ?? "default"}
+    </button>
+  ),
 }));
 
 vi.mock("./AgentSkillRow", () => ({
@@ -58,6 +86,8 @@ vi.mock("./AgentSkillRow", () => ({
     checked?: boolean;
     disabled?: boolean;
     onCheckedChange?: (next: boolean) => void;
+    badge?: ReactNode;
+    accessory?: ReactNode;
   }) => (
     <label data-testid={`skill-row-${props.data.key}`}>
       <input
@@ -66,6 +96,8 @@ vi.mock("./AgentSkillRow", () => ({
         disabled={Boolean(props.disabled)}
         onChange={(event) => props.onCheckedChange?.(event.target.checked)}
       />
+      {props.badge}
+      {props.accessory}
       {props.data.key}
     </label>
   ),
@@ -111,6 +143,8 @@ describe("AgentSkillsTab", () => {
     skillsMock.mockReset();
     syncSkillsMock.mockReset();
     companySkillsListMock.mockReset();
+    companySkillVersionsMock.mockReset();
+    experimentalSettingsMock.mockReset();
     skillsMock.mockResolvedValue({
       mode: "managed",
       desiredSkills: ["docs.read"],
@@ -122,6 +156,8 @@ describe("AgentSkillsTab", () => {
       entries: [],
     }));
     companySkillsListMock.mockResolvedValue([skillFixture()]);
+    companySkillVersionsMock.mockResolvedValue([]);
+    experimentalSettingsMock.mockResolvedValue({ enableBetaSkills: false });
   });
 
   afterEach(() => {
@@ -217,6 +253,46 @@ describe("AgentSkillsTab", () => {
     expect(syncSkillsMock).toHaveBeenCalledWith(
       "agent-1",
       ["docs.read", "web.search"],
+      "company-1",
+    );
+  });
+
+  it("pins a seeded Paperclip release and sends the version selection immediately", async () => {
+    const coreSkill = skillFixture({
+      id: "skill-core",
+      key: "paperclipai/paperclip/paperclip",
+      name: "Paperclip",
+    });
+    companySkillsListMock.mockResolvedValue([coreSkill]);
+    experimentalSettingsMock.mockResolvedValue({ enableBetaSkills: true });
+    companySkillVersionsMock.mockResolvedValue([
+      {
+        id: "version-7",
+        companyId: "company-1",
+        companySkillId: "skill-core",
+        revisionNumber: 7,
+        label: "V7 - Stable",
+        releaseId: "v7",
+        releaseName: "V7 - Stable",
+        releasedAt: "2026-07-21",
+      },
+    ]);
+    skillsMock.mockResolvedValue({
+      mode: "persistent",
+      desiredSkills: ["paperclipai/paperclip/paperclip"],
+      desiredSkillEntries: [{ key: "paperclipai/paperclip/paperclip", versionId: null }],
+      entries: [{ key: "paperclipai/paperclip/paperclip", runtimeName: "paperclip" }],
+    });
+
+    await renderTab();
+    await new Promise((resolve) => window.setTimeout(resolve, 25));
+    await flush();
+    const picker = container.querySelector<HTMLButtonElement>('[data-testid="release-picker"]');
+    expect(picker).not.toBeNull();
+    await act(() => picker?.click());
+    expect(syncSkillsMock).toHaveBeenCalledWith(
+      "agent-1",
+      [{ key: "paperclipai/paperclip/paperclip", versionId: "version-7" }],
       "company-1",
     );
   });

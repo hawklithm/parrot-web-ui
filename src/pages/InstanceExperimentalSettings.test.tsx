@@ -72,6 +72,7 @@ function defaultExperimentalSettings(): InstanceExperimentalSettingsPayload {
     issueGraphLivenessAutoRecoveryLookbackHours: 24,
     enableWorkspaceBranchReconcileForward: true,
     enableWorkspaceDirtyQuarantineRepair: true,
+    enableBetaSkills: false,
     enableWorktreeRunExecution: false,
   };
 }

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/lib/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Search, Store, X } from "lucide-react";
-import type { Agent } from "../../lib/paperclip-shared/src";
+import type { Agent, AgentDesiredSkillEntry } from "../../lib/paperclip-shared/src";
 import { agentsApi } from "../../api/agents";
 import { companySkillsApi } from "../../api/companySkills";
+import { instanceSettingsApi } from "../../api/instanceSettings";
 import { queryKeys } from "../../lib/queryKeys";
 import { resolveSkillSummaryText } from "../../lib/company-skill-summary";
 import { adapterLabels } from "../../components/agent-config-primitives";
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PageSkeleton } from "../../components/PageSkeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   applyAgentSkillSnapshot,
   isReadOnlyUnmanagedSkillEntry,
@@ -23,14 +25,41 @@ import {
 import { AgentSkillRow, type AgentSkillRowData } from "./AgentSkillRow";
 import { filterAgentSkills } from "./agent-skill-filter";
 import { buildAgentSkillSourceMeta } from "./agent-skill-source";
+import { AgentSkillReleasePicker, releaseShortLabel } from "./AgentSkillReleasePicker";
 
 const MATERIALIZATION_NOTE =
   "Enabled skills are materialized into the stable Paperclip-managed prompt bundle on the agent's next run.";
+
+const PAPERCLIP_CORE_SKILL_KEY = "paperclipai/paperclip/paperclip";
+
+function desiredSkillKey(entry: string | AgentDesiredSkillEntry): string {
+  return typeof entry === "string" ? entry : entry.key;
+}
+
+function pinsFromEntries(entries: AgentDesiredSkillEntry[] | undefined): Record<string, string> {
+  const pins: Record<string, string> = {};
+  for (const entry of entries ?? []) {
+    if (entry.versionId) pins[entry.key] = entry.versionId;
+  }
+  return pins;
+}
+
+function toDesiredSkillPayload(
+  skillKeys: string[],
+  pins: Record<string, string>,
+  betaSkillsEnabled: boolean,
+): Array<string | AgentDesiredSkillEntry> {
+  return skillKeys.map((key) =>
+    betaSkillsEnabled && pins[key] ? { key, versionId: pins[key] } : key,
+  );
+}
 
 export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?: string }) {
   const queryClient = useQueryClient();
   const [skillDraft, setSkillDraft] = useState<string[]>([]);
   const [lastSavedSkills, setLastSavedSkills] = useState<string[]>([]);
+  const [versionPins, setVersionPins] = useState<Record<string, string>>({});
+  const versionPinsRef = useRef<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [detectedOpen, setDetectedOpen] = useState(false);
   const lastSavedSkillsRef = useRef<string[]>([]);
@@ -52,12 +81,35 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
     enabled: Boolean(companyId),
   });
 
+  const { data: experimentalSettings } = useQuery({
+    queryKey: queryKeys.instance.experimentalSettings,
+    queryFn: () => instanceSettingsApi.getExperimental(),
+  });
+  const betaSkillsEnabled = experimentalSettings?.enableBetaSkills === true;
+  const paperclipCoreSkill = useMemo(
+    () => (companySkills ?? []).find((skill) => skill.key === PAPERCLIP_CORE_SKILL_KEY) ?? null,
+    [companySkills],
+  );
+  const { data: paperclipVersions } = useQuery({
+    queryKey: queryKeys.companySkills.versions(companyId ?? "", paperclipCoreSkill?.id ?? ""),
+    queryFn: () => companySkillsApi.versions(companyId!, paperclipCoreSkill!.id),
+    enabled: Boolean(companyId && betaSkillsEnabled && paperclipCoreSkill?.id),
+  });
+  const paperclipReleases = useMemo(
+    () => (paperclipVersions ?? []).filter((version) => version.releaseId != null),
+    [paperclipVersions],
+  );
+
   const syncSkills = useMutation({
-    mutationFn: (desiredSkills: string[]) => agentsApi.syncSkills(agent.id, desiredSkills, companyId),
+    mutationFn: (desiredSkills: Array<string | AgentDesiredSkillEntry>) =>
+      agentsApi.syncSkills(agent.id, desiredSkills, companyId),
     onSuccess: async (snapshot) => {
       queryClient.setQueryData(queryKeys.agents.skills(agent.id), snapshot);
       lastSavedSkillsRef.current = snapshot.desiredSkills;
       setLastSavedSkills(snapshot.desiredSkills);
+      const nextPins = pinsFromEntries(snapshot.desiredSkillEntries);
+      versionPinsRef.current = nextPins;
+      setVersionPins(nextPins);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agent.id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agent.urlKey) }),
@@ -66,7 +118,7 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
     onError: (_error, attemptedDesiredSkills) => {
       // Remember the payload that failed so the autosave effect stops retrying
       // it until the user edits the draft again.
-      failedSkillDraftRef.current = attemptedDesiredSkills;
+      failedSkillDraftRef.current = attemptedDesiredSkills.map(desiredSkillKey);
     },
   });
 
@@ -74,10 +126,19 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
     setSkillDraft([]);
     setLastSavedSkills([]);
     lastSavedSkillsRef.current = [];
+    setVersionPins({});
+    versionPinsRef.current = {};
     hasHydratedSkillSnapshotRef.current = false;
     skipNextSkillAutosaveRef.current = true;
     failedSkillDraftRef.current = null;
   }, [agent.id]);
+
+  useEffect(() => {
+    if (!skillSnapshot || syncSkills.isPending) return;
+    const nextPins = pinsFromEntries(skillSnapshot.desiredSkillEntries);
+    versionPinsRef.current = nextPins;
+    setVersionPins(nextPins);
+  }, [skillSnapshot, syncSkills.isPending]);
 
   useEffect(() => {
     if (!skillSnapshot) return;
@@ -121,12 +182,19 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
           failedDraft: failedSkillDraftRef.current,
         })
       ) {
-        syncSkills.mutate(skillDraft);
+        syncSkills.mutate(toDesiredSkillPayload(skillDraft, versionPinsRef.current, betaSkillsEnabled));
       }
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [skillDraft, skillSnapshot, syncSkills.isPending, syncSkills.isError, syncSkills.mutate]);
+  }, [
+    betaSkillsEnabled,
+    skillDraft,
+    skillSnapshot,
+    syncSkills.isPending,
+    syncSkills.isError,
+    syncSkills.mutate,
+  ]);
 
   const companySkillByKey = useMemo(
     () => new Map((companySkills ?? []).map((skill) => [skill.key, skill])),
@@ -245,17 +313,54 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
     );
   };
 
-  const renderRow = (row: AgentSkillRowData, variant: "enabled" | "available") => (
-    <AgentSkillRow
-      key={row.key}
-      variant={variant}
-      data={row}
-      checked={variant === "enabled"}
-      disabled={unsupported}
-      disabledReason={unsupportedMessage}
-      onCheckedChange={(next) => toggleSkill(row.key, next)}
-    />
-  );
+  const handleReleaseChange = (key: string, versionId: string | null) => {
+    const nextPins = { ...versionPinsRef.current };
+    if (versionId) nextPins[key] = versionId;
+    else delete nextPins[key];
+    versionPinsRef.current = nextPins;
+    setVersionPins(nextPins);
+    syncSkills.mutate(toDesiredSkillPayload(skillDraft, nextPins, betaSkillsEnabled));
+  };
+
+  const releasePickerActive = betaSkillsEnabled && paperclipReleases.length > 0;
+
+  const renderRow = (row: AgentSkillRowData, variant: "enabled" | "available") => {
+    const showReleasePicker =
+      releasePickerActive && variant === "enabled" && row.key === PAPERCLIP_CORE_SKILL_KEY;
+    const pinnedVersionId = versionPins[row.key] ?? null;
+    const pinnedRelease = pinnedVersionId
+      ? paperclipReleases.find((release) => release.id === pinnedVersionId) ?? null
+      : null;
+
+    return (
+      <AgentSkillRow
+        key={row.key}
+        variant={variant}
+        data={row}
+        checked={variant === "enabled"}
+        disabled={unsupported}
+        disabledReason={unsupportedMessage}
+        onCheckedChange={(next) => toggleSkill(row.key, next)}
+        badge={
+          showReleasePicker && pinnedRelease ? (
+            <Badge variant="secondary" className="text-xs">
+              Beta - {releaseShortLabel(pinnedRelease)}
+            </Badge>
+          ) : undefined
+        }
+        accessory={
+          showReleasePicker ? (
+            <AgentSkillReleasePicker
+              releases={paperclipReleases}
+              value={pinnedVersionId}
+              disabled={unsupported || syncSkills.isPending}
+              onChange={(nextVersionId) => handleReleaseChange(row.key, nextVersionId)}
+            />
+          ) : undefined
+        }
+      />
+    );
+  };
 
   const libraryEmpty = libraryRows.length === 0;
 
