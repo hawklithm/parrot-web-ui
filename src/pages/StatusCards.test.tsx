@@ -119,7 +119,7 @@ describe("StatusCards", () => {
     expect(c.textContent).toContain("Loading status cards…");
     await act(async () => resolveList([card]));
     await waitForText(c, "Release Status");
-    expect(mockStatusCardsApi.list).toHaveBeenCalledWith("company-1");
+    expect(mockStatusCardsApi.list).toHaveBeenCalledWith("company-1", false);
     expect(c.textContent).toContain("active · updated");
     expect(c.textContent).toContain("3 changes");
     expect(c.textContent).toContain("All green.");
@@ -129,6 +129,10 @@ describe("StatusCards", () => {
     mockStatusCardsApi.list.mockResolvedValue([]);
     const empty = renderApp();
     await waitForText(empty, "No status cards yet.");
+    await act(async () => {
+      root?.unmount();
+      root = null;
+    });
 
     mockStatusCardsApi.list.mockRejectedValue(new Error("boom"));
     const errored = renderApp();
@@ -175,5 +179,49 @@ describe("StatusCards", () => {
     await act(async () => archiveButton?.click());
     await flush();
     expect(mockStatusCardsApi.update).toHaveBeenCalledWith("card-1", { archived: true });
+  });
+
+  it("opens detail revisions, saves settings, and switches to archived cards", async () => {
+    mockStatusCardsApi.list.mockResolvedValue([card]);
+    mockStatusCardsApi.revisions.mockResolvedValue([
+      { id: "revision-1", markdown: "Release is green.", createdAt: "2026-08-22T10:00:00Z" },
+    ]);
+    mockStatusCardsApi.update.mockResolvedValue(card);
+    const c = renderApp();
+    await waitForText(c, "Release Status");
+
+    const cardButton = [...c.querySelectorAll("button")].find((button) => button.textContent?.includes("Release Status"));
+    await act(async () => cardButton?.click());
+    await waitForText(c, "Revision History");
+    expect(mockStatusCardsApi.revisions).toHaveBeenCalledWith("card-1");
+    expect(c.querySelector('[role="dialog"]')?.getAttribute("aria-label")).toBe("Release Status details");
+
+    const closeButton = c.querySelector<HTMLButtonElement>('button[aria-label="Close status card details"]');
+    await act(async () => closeButton?.click());
+    expect(c.querySelector('[role="dialog"]')).toBeNull();
+
+    const settingsButton = c.querySelector<HTMLButtonElement>('button[aria-label="Edit status card settings"]');
+    await act(async () => settingsButton?.click());
+    const settingsInputs = c.querySelectorAll("article input, article textarea");
+    const inputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    const areaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")!.set!;
+    inputSetter.call(settingsInputs[0], "Updated title");
+    settingsInputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+    areaSetter.call(settingsInputs[1], "Updated prompt");
+    settingsInputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+    await flush();
+    const saveButton = [...c.querySelectorAll("button")].find((button) => button.textContent === "Save");
+    await act(async () => saveButton?.click());
+    await flush();
+    expect(mockStatusCardsApi.update).toHaveBeenCalledWith("card-1", {
+      title: "Updated title",
+      interestPrompt: "Updated prompt",
+    });
+
+    const archivedToggle = [...c.querySelectorAll("button")].find((button) => button.textContent?.includes("Show archived"));
+    mockStatusCardsApi.list.mockResolvedValue([]);
+    await act(async () => archivedToggle?.click());
+    await waitForText(c, "No archived status cards.");
+    expect(mockStatusCardsApi.list).toHaveBeenLastCalledWith("company-1", true);
   });
 });
