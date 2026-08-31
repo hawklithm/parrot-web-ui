@@ -736,7 +736,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
   switch (state) {
     case "settings-pane":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: null,
         latestRun: null,
@@ -746,7 +746,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "connect-wizard":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: null,
         preview: null,
         latestRun: null,
@@ -756,7 +756,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "schema-mismatch":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(STACK_TARGET_SCHEMA_BEHIND),
         preview: schemaMismatchPreview(),
         latestRun: null,
@@ -766,7 +766,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "preview":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: basePreview(),
         latestRun: null,
@@ -776,7 +776,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "preview-clean":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: cleanPreview(),
         latestRun: null,
@@ -786,7 +786,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "progress":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: null,
         latestRun: runningRun(),
@@ -796,7 +796,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "retry":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: null,
         latestRun: failedRun(),
@@ -808,7 +808,7 @@ function buildFixture(state: FixtureStateKey): Fixture {
       };
     case "finish":
       return {
-        selectedCompanyName: "Paperclip · PC521D",
+        selectedCompanyName: "Parrot · PC521D",
         connection: connectedConnection(),
         preview: null,
         latestRun: succeededRun(),

@@ -2308,7 +2308,7 @@ export function PipelineSettings() {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-foreground">Break into smaller pieces</h3>
           <p className="max-w-md text-sm text-muted-foreground">
-            The agent decides what the pieces are. Paperclip creates and tracks them.
+            The agent decides what the pieces are. Parrot creates and tracks them.
           </p>
         </div>
         <ToggleSwitch
@@ -3000,7 +3000,7 @@ export function PipelineSettings() {
                               </div>
                               {selectedAutomationProject && !selectedAutomationProjectWorkspace ? (
                                 <p className="mt-2 text-xs text-muted-foreground">
-                                  This project has no saved workspace default. Paperclip will use the project fallback when automation runs.
+                                  This project has no saved workspace default. Parrot will use the project fallback when automation runs.
                                 </p>
                               ) : null}
                             </FieldRow>

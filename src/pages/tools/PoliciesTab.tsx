@@ -442,7 +442,7 @@ function PolicySimulator({
             <FlaskConical className="h-4 w-4" />
             Test a rule
           </SheetTitle>
-          <SheetDescription>Pick an agent and an action to see what Paperclip would do.</SheetDescription>
+          <SheetDescription>Pick an agent and an action to see what Parrot would do.</SheetDescription>
         </SheetHeader>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -1111,7 +1111,7 @@ export function PoliciesTab({ companyId }: { companyId: string }) {
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">Remembered approvals</h3>
-        <p className="text-sm text-muted-foreground">When you approve an Ask-first request, Paperclip can remember the decision.</p>
+        <p className="text-sm text-muted-foreground">When you approve an Ask-first request, Parrot can remember the decision.</p>
         {trustRules.isLoading ? (
           <LoadingState />
         ) : trustRules.error ? (

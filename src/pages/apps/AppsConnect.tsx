@@ -774,12 +774,12 @@ export function OAuthConnectStateScreen({
   const status = phase === "entry"
     ? {
         title: `Connect ${entry.name} to Parrot`,
-        body: `Paperclip will open ${entry.name} so you can choose a workspace and approve access.`,
+        body: `Parrot will open ${entry.name} so you can choose a workspace and approve access.`,
       }
     : phase === "starting"
       ? {
           title: "Preparing secure sign-in",
-          body: `Paperclip is creating a secure ${entry.name} connection.`,
+          body: `Parrot is creating a secure ${entry.name} connection.`,
         }
       : phase === "redirecting"
         ? {
@@ -830,7 +830,7 @@ export function OAuthConnectStateScreen({
         </div>
         <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="h-3.5 w-3.5" />
-          Your authorization stays in Paperclip’s encrypted secret store.
+          Your authorization stays in Parrot’s encrypted secret store.
         </p>
       </div>
     </div>
@@ -1104,7 +1104,7 @@ function GalleryStep({
           <ConnectMethodRow
             icon={TerminalSquare}
             title="Run your own"
-            description="Register a command Paperclip runs in your workspace for a tool that isn’t listed."
+            description="Register a command Parrot runs in your workspace for a tool that isn’t listed."
             onClick={onRunYourOwn}
           />
           <ConnectMethodRow

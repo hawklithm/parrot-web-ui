@@ -133,7 +133,7 @@ export function NewAgentDialog() {
 
 **Instructions for CEO:**
 
-Please create this agent by calling the Paperclip MCP tool \`paperclipHireAgent\` with the following steps:
+Please create this agent by calling the Parrot MCP tool \`paperclipHireAgent\` with the following steps:
 
 1. Extract the agent specifications from the description above
 2. Call the tool with these parameters:
@@ -165,7 +165,7 @@ Please describe the agent you want to create, including:
 - Required skills or specializations
 - Any specific configuration needs
 
-Then use the Paperclip MCP tool \`paperclipHireAgent\` to create it.`;
+Then use the Parrot MCP tool \`paperclipHireAgent\` to create it.`;
 
     closeNewAgent();
     openNewIssue({
@@ -345,7 +345,7 @@ Then use the Paperclip MCP tool \`paperclipHireAgent\` to create it.`;
                   Back
                 </button>
                 <p className="text-sm text-muted-foreground">
-                  Choose the runtime Paperclip should start or resume directly.
+                  Choose the runtime Parrot should start or resume directly.
                 </p>
               </div>
 
@@ -480,7 +480,7 @@ Create a **Backend Engineer** agent with these specifications:
                 <div className="space-y-1">
                   <h2 className="text-sm font-semibold">Invite an external agent</h2>
                   <p className="text-sm text-muted-foreground">
-                    Generate a one-time onboarding prompt that any compatible agent can use to request access, wait for approval, and claim its Paperclip API key.
+                    Generate a one-time onboarding prompt that any compatible agent can use to request access, wait for approval, and claim its Parrot API key.
                   </p>
                 </div>
               </div>
