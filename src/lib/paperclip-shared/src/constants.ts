@@ -1532,3 +1532,7 @@ export const TOOL_AUDIT_OUTCOMES = ["pending", "success", "failure", "denied", "
 export type ToolAuditOutcome = (typeof TOOL_AUDIT_OUTCOMES)[number];
 export type ToolMcpGatewayContextScopeType = (typeof TOOL_MCP_GATEWAY_CONTEXT_SCOPE_TYPES)[number];
 export type ToolProfileStatus = (typeof TOOL_PROFILE_STATUSES)[number];
+export const TOOL_CONNECTION_ATTENTION_HEALTH_STATUSES: readonly ToolConnectionHealthStatus[] = ["degraded", "failed", "error", "missing_secret"];
+export function isToolConnectionAttentionHealth(status: ToolConnectionHealthStatus): boolean {
+  return TOOL_CONNECTION_ATTENTION_HEALTH_STATUSES.includes(status);
+}

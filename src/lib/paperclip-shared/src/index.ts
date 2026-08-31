@@ -1758,3 +1758,15 @@ export {
   type CreateEnvironmentCustomImageTerminalSessionToken,
   type EnvironmentCustomImageTerminalSessionToken,
 } from "./validators/environment-custom-images.js";
+export * from "./humanize-connection.js";
+export * from "./app-definitions.js";
+export * from "./types/tool-access.js";
+export * from "./types/smoke-lab.js";
+export * from "./types/app-definition.js";
+export * from "./validators/smoke-lab.js";
+export * from "./constants.js";
+export type {
+  CreateToolTrustRuleFromActionRequest,
+  RevokeToolTrustRule,
+} from "./types/tool-access.js";
+export * from "./validators/tool-access.js";

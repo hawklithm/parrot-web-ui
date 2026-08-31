@@ -688,3 +688,5 @@ export {
   type SetPluginState,
   type ListPluginState,
 } from "./plugin.js";
+export * from "./tool-access.js";
+export * from "./smoke-lab.js";
