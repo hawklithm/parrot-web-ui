@@ -14,7 +14,7 @@ import type {
   SecretProposalView,
   ApproveSecretProposalInput,
   RejectSecretProposalInput,
-} from "../../lib/paperclip-tools-shared";
+} from "../../lib/paperclip-shared/src";
 import { secretProposalsApi } from "../../api/secretProposals";
 
 interface Props {

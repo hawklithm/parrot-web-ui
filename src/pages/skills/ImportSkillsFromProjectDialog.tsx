@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Search, X } from "lucide
 import type {
   CompanySkillProjectScanCandidate,
   CompanySkillProjectScanResult,
-} from "../../lib/paperclip-tools-shared";
+} from "../../lib/paperclip-shared/src";
 import { companySkillsApi } from "../../api/companySkills";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";

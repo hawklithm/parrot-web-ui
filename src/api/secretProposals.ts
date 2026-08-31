@@ -2,7 +2,7 @@ import type {
   SecretProposalView,
   ApproveSecretProposalInput,
   RejectSecretProposalInput,
-} from "../lib/paperclip-tools-shared";
+} from "../lib/paperclip-shared/src";
 import { api } from "./client";
 
 export interface ListProposalsParams {

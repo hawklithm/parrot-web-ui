@@ -100,6 +100,7 @@ export type {
   CompanySkillProjectScanRequest,
   CompanySkillProjectScanSkipped,
   CompanySkillProjectScanConflict,
+  CompanySkillProjectScanCandidate,
   CompanySkillProjectScanResult,
   CompanySkillCreateRequest,
   CompanySkillFileDetail,
@@ -488,6 +489,13 @@ export type {
   SecretProviderDescriptor,
   SecretStatus,
   SecretVersionStatus,
+  SecretProposalKind,
+  SecretProposalStatus,
+  SecretProposalAgentRef,
+  SecretProposalIssueRef,
+  SecretProposalView,
+  ApproveSecretProposalInput,
+  RejectSecretProposalInput,
 } from "./secrets.js";
 export type {
   Routine,
