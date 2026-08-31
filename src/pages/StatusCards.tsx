@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, Eye, EyeOff, Loader2, Play, Plus, RefreshCw, Settings, X } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { statusCardsApi, type StatusCard } from "../api/statusCards";
-import { Button } from "../components/ui/button";
+import { isPermissionDenied } from "@/api/client";
+import { Button } from "@/components/ui/button";
 
 type ActionKind = "refresh" | "recompile" | "archive" | "unarchive";
 
@@ -97,10 +98,16 @@ export function StatusCards() {
         </div>
       ) : cards.isError ? (
         <div className="rounded-lg border border-destructive/50 p-8 text-center">
-          <p className="text-destructive">Unable to load status cards.</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => cards.refetch()}>
-            Retry
-          </Button>
+          {isPermissionDenied(cards.error) ? (
+            <p className="text-destructive">You do not have permission to view status cards.</p>
+          ) : (
+            <>
+              <p className="text-destructive">Unable to load status cards.</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => cards.refetch()}>
+                Retry
+              </Button>
+            </>
+          )}
         </div>
       ) : cards.data?.length ? (
         <div className="grid gap-4 md:grid-cols-2">

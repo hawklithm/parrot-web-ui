@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ExternalLink, Loader2, X } from "lucide-react";
 import { Link, useParams } from "@/lib/router";
 import { attentionApi, type AttentionItem } from "../api/attention";
+import { isPermissionDenied } from "@/api/client";
 import { decisionsApi } from "../api/decisions";
 import { useCompany } from "../context/CompanyContext";
 import { Button } from "../components/ui/button";
@@ -30,7 +31,12 @@ export function WhatNeedsMe() {
 
   if (!selectedCompanyId) return <div className="p-6 text-muted-foreground">Select a company to view decisions.</div>;
   if (feed.isLoading) return <div className="p-6 text-muted-foreground">Loading decisions…</div>;
-  if (feed.isError) return <div className="p-6 text-destructive">Unable to load decisions.</div>;
+  if (feed.isError) {
+    if (isPermissionDenied(feed.error)) {
+      return <div className="p-6 text-destructive">You do not have permission to view this queue.</div>;
+    }
+    return <div className="p-6 text-destructive">Unable to load decisions.</div>;
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 p-6">

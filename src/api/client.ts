@@ -14,6 +14,17 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * True when an error is a permission denial (HTTP 403). Used by pages to render
+ * a dedicated "you don't have access" state instead of a generic error.
+ * Duck-typed on `status` so it also catches plain/fetch error objects carrying a
+ * 403, not only the canonical `ApiError`. Mirrors the idiom used by
+ * CompanyAccess/CompanyInvites/InstanceAccess (which pass real `ApiError`s).
+ */
+export function isPermissionDenied(error: unknown): boolean {
+  return Boolean(error) && (error as { status?: number }).status === 403;
+}
+
 export interface RequestOptions {
   /** Abort signal wired through to `fetch` and coalescing (per-caller). */
   signal?: AbortSignal;

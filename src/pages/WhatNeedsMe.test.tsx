@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "../context/ToastContext";
 import { WhatNeedsMe } from "./WhatNeedsMe";
 
+
 const mockRouterState = vi.hoisted(() => ({ pathname: "/decisions", navigate: vi.fn() }));
 const mockCompany = vi.hoisted<{ selectedCompanyId: string | null }>(() => ({ selectedCompanyId: "company-1" }));
 const mockAttentionApi = vi.hoisted(() => ({ list: vi.fn() }));
@@ -140,6 +141,15 @@ describe("WhatNeedsMe (Decision page parity)", () => {
     mockAttentionApi.list.mockRejectedValue(new Error("boom"));
     renderApp();
     await waitForText(container, "Unable to load decisions.");
+  });
+
+  it("shows a permission-denied state on a 403 response", async () => {
+    mockAttentionApi.list.mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 }),
+    );
+    renderApp();
+    await waitForText(container, "You do not have permission to view this queue.");
+    expect(container.textContent).not.toContain("Unable to load decisions.");
   });
 
   it("shows an empty state when there are no items", async () => {

@@ -9,6 +9,7 @@ import {
 } from "../lib/paperclip-shared/src";
 import { LogOut, SlidersHorizontal } from "lucide-react";
 import { authApi } from "@/api/auth";
+import { isPermissionDenied } from "@/api/client";
 import { healthApi } from "@/api/health";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { ModeBadge } from "@/components/access/ModeBadge";
@@ -70,6 +71,13 @@ export function InstanceGeneralSettings() {
   }
 
   if (generalQuery.error) {
+    if (isPermissionDenied(generalQuery.error)) {
+      return (
+        <div className="text-sm text-destructive">
+          Instance admin access is required to view general settings.
+        </div>
+      );
+    }
     return (
       <div className="text-sm text-destructive">
         {generalQuery.error instanceof Error

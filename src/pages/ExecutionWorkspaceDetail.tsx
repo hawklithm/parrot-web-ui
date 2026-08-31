@@ -13,6 +13,7 @@ import { CopyText } from "../components/CopyText";
 import { ExecutionWorkspaceCloseDialog } from "../components/ExecutionWorkspaceCloseDialog";
 import { MissingPluginTabPlaceholder } from "../components/MissingPluginTabPlaceholder";
 import { agentsApi } from "../api/agents";
+import { isPermissionDenied } from "@/api/client";
 import { executionWorkspacesApi } from "../api/execution-workspaces";
 import { heartbeatsApi } from "../api/heartbeats";
 import { issuesApi } from "../api/issues";
@@ -756,6 +757,13 @@ export function ExecutionWorkspaceDetail() {
 
   if (workspaceQuery.isLoading) return <p className="text-sm text-muted-foreground">Loading workspace…</p>;
   if (workspaceQuery.error) {
+    if (isPermissionDenied(workspaceQuery.error)) {
+      return (
+        <p className="text-sm text-destructive">
+          You do not have permission to view this workspace.
+        </p>
+      );
+    }
     return (
       <p className="text-sm text-destructive">
         {workspaceQuery.error instanceof Error ? workspaceQuery.error.message : "Failed to load workspace"}

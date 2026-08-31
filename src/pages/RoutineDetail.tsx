@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Repeat, Sparkles } from "lucide-react";
-import { ApiError } from "../api/client";
+import { ApiError, isPermissionDenied } from "@/api/client";
 import {
   routinesApi,
   type RoutineTriggerResponse,
@@ -674,6 +674,14 @@ export function RoutineDetail() {
   }
 
   if (error || !routine || !routineDefaults) {
+    if (error && isPermissionDenied(error)) {
+      return (
+        <EmptyState
+          icon={AlertCircle}
+          message="You do not have permission to view this routine."
+        />
+      );
+    }
     return (
       <EmptyState
         icon={AlertCircle}
