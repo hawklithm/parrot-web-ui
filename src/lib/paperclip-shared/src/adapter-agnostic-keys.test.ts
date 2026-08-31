@@ -26,16 +26,13 @@ describe("adapter-agnostic config keys", () => {
     expect(ADAPTER_AGNOSTIC_KEYS).toEqual(EXPECTED_ADAPTER_AGNOSTIC_KEYS);
   });
 
-  it("is imported by the server and UI instead of being re-declared", () => {
-    const serverSource = readRepoFile("server/src/routes/agents.ts");
-    const uiSource = readRepoFile("ui/src/lib/agent-config-patch.ts");
-
-    expect(serverSource).toContain("ADAPTER_AGNOSTIC_KEYS");
-    expect(serverSource).toContain("from \"parrot-shared\"");
-    expect(serverSource).not.toMatch(/const\s+ADAPTER_AGNOSTIC_KEYS\s*=/);
+  it("is imported by the UI instead of being re-declared", () => {
+    // Parrot: the backend is Rust, so there is no server-side TS consumer;
+    // the UI consumer must import from the controlled shared package.
+    const uiSource = readRepoFile("lib/agent-config-patch.ts");
 
     expect(uiSource).toContain("ADAPTER_AGNOSTIC_KEYS");
-    expect(uiSource).toContain("from \"parrot-shared\"");
+    expect(uiSource).toContain("paperclip-shared");
     expect(uiSource).not.toMatch(/const\s+ADAPTER_AGNOSTIC_KEYS\s*=/);
   });
 });
