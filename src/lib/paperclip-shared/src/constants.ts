@@ -1516,3 +1516,19 @@ export type ToolRiskLevel = (typeof TOOL_RISK_LEVELS)[number];
 export type ToolRuntimeKind = (typeof TOOL_RUNTIME_KINDS)[number];
 
 export type ToolRuntimeSlotStatus = (typeof TOOL_RUNTIME_SLOT_STATUSES)[number];
+
+export const TOOL_PROFILE_STATUSES = ["draft", "active", "disabled", "archived"] as const;
+
+export const TOOL_MCP_GATEWAY_CONTEXT_SCOPE_TYPES = [
+  "none",
+  "company",
+  "project",
+  "routine",
+  "issue",
+  "agent",
+] as const;
+
+export const TOOL_AUDIT_OUTCOMES = ["pending", "success", "failure", "denied", "timeout", "cancelled"] as const;
+export type ToolAuditOutcome = (typeof TOOL_AUDIT_OUTCOMES)[number];
+export type ToolMcpGatewayContextScopeType = (typeof TOOL_MCP_GATEWAY_CONTEXT_SCOPE_TYPES)[number];
+export type ToolProfileStatus = (typeof TOOL_PROFILE_STATUSES)[number];
