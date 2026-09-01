@@ -412,7 +412,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
 
     await render();
 
-    expect(container.textContent).toContain("couldn’t check for an existing connection");
+    expect(container.textContent).toContain("couldn't check for an existing connection");
     await act(async () => {
       buttonByText("Try again")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -439,7 +439,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).toContain("couldn’t check for an existing connection");
+    expect(container.textContent).toContain("couldn't check for an existing connection");
     expect(buttonByText("Try again")).toBeTruthy();
     expect(connectAppMock).not.toHaveBeenCalled();
     expect(startOAuthMock).not.toHaveBeenCalled();

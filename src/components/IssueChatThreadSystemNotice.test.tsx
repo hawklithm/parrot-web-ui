@@ -112,7 +112,7 @@ describe("IssueChatThread system notice routing", () => {
       authorType: "system",
       authorAgentId: null,
       authorUserId: null,
-      body: "Paperclip needs a disposition before this issue can continue.",
+      body: "Parrot needs a disposition before this issue can continue.",
       presentation: {
         kind: "system_notice",
         tone: "warning",
@@ -140,7 +140,7 @@ describe("IssueChatThread system notice routing", () => {
     expect(row).not.toBeNull();
     const status = row?.querySelector('[role="status"]');
     expect(status?.getAttribute("aria-label")).toBe("Missing issue disposition");
-    expect(container.textContent).toContain("Paperclip needs a disposition");
+    expect(container.textContent).toContain("Parrot needs a disposition");
     // collapsed by default — metadata identifier should not be visible
     expect(container.textContent).not.toContain("PAP-3440");
     const toggle = row?.querySelector("button[aria-expanded]") as HTMLButtonElement | null;
@@ -263,7 +263,7 @@ describe("IssueChatThread system notice routing", () => {
       authorUserId: null,
       runId: "run-issue-chat-01",
       runAgentId: "agent-codex",
-      body: "Paperclip needs a disposition before this issue can continue.",
+      body: "Parrot needs a disposition before this issue can continue.",
       presentation: {
         kind: "system_notice",
         tone: "warning",
@@ -333,7 +333,7 @@ describe("IssueChatThread system notice routing", () => {
     }
   });
 
-  it("labels system notice source as Paperclip when no run agent can be resolved", () => {
+  it("labels system notice source as Parrot when no run agent can be resolved", () => {
     const comment: IssueChatComment = {
       id: "comment-system-no-author",
       companyId: "company-1",
@@ -358,11 +358,11 @@ describe("IssueChatThread system notice routing", () => {
 
     const status = container.querySelector('[role="status"]');
     expect(status).not.toBeNull();
-    expect(status?.textContent).toContain("Paperclip");
+    expect(status?.textContent).toContain("Parrot");
     expect(status?.textContent).not.toContain("You");
   });
 
-  it("falls back to Paperclip in the system notice header when run agent is unknown to agentMap", () => {
+  it("falls back to Parrot in the system notice header when run agent is unknown to agentMap", () => {
     const comment: IssueChatComment = {
       id: "comment-system-unknown-agent",
       companyId: "company-1",
@@ -388,7 +388,7 @@ describe("IssueChatThread system notice routing", () => {
     const status = container.querySelector('[role="status"]');
     const sourceLink = status?.querySelector('a[href^="/agents/"]') as HTMLAnchorElement | null;
     expect(sourceLink?.getAttribute("href")).toBe("/agents/agent-unknown/runs/run-xyz");
-    expect(sourceLink?.textContent).toBe("Paperclip");
+    expect(sourceLink?.textContent).toBe("Parrot");
   });
 
   it("keeps agent-authored comments as assistant bubbles even when presentation requests system_notice", () => {
@@ -426,7 +426,7 @@ describe("IssueChatThread system notice routing", () => {
       authorUserId: null,
       runId: "run-stale",
       runAgentId: "agent-codex",
-      body: "Paperclip needs a disposition before this issue can continue.",
+      body: "Parrot needs a disposition before this issue can continue.",
       presentation: {
         kind: "system_notice",
         tone: "warning",
@@ -474,7 +474,7 @@ describe("IssueChatThread system notice routing", () => {
     expect(row?.querySelector('[data-testid="stale-disposition-warning-time"]')?.parentElement?.className).toContain("ml-auto");
     expect(row?.textContent).toContain("Stale disposition warning");
     expect(row?.textContent).not.toContain("This disposition warning is stale because the issue now has a newer disposition.");
-    expect(row?.textContent).not.toContain("Paperclip needs a disposition before this issue can continue.");
+    expect(row?.textContent).not.toContain("Parrot needs a disposition before this issue can continue.");
 
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     const detailsId = toggle.getAttribute("aria-controls");

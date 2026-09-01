@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RoutineDetail } from "./RoutineDetail";
 import type { RoutineDetail as RoutineDetailType } from "../lib/paperclip-shared/src";
+import { ApiError } from "@/api/client";
 
 let currentParams: Record<string, string> = { routineId: "routine-1", section: "overview" };
 
@@ -334,5 +335,19 @@ describe("RoutineDetail page", () => {
     expect(runButton?.disabled).toBe(true);
     resolveRun({ id: "run-1" });
     await flush();
+  });
+
+  it("renders a permission-denied state when the routine fetch returns 403", async () => {
+    routinesGetMock.mockRejectedValue(new ApiError("Forbidden", 403, {}));
+    await renderPage();
+    expect(container.textContent).toContain("You do not have permission to view this routine.");
+    expect(container.textContent).not.toContain("We couldn't load this routine.");
+  });
+
+  it("renders the generic error message when the routine fetch fails for another reason", async () => {
+    routinesGetMock.mockRejectedValue(new Error("boom"));
+    await renderPage();
+    expect(container.textContent).toContain("boom");
+    expect(container.textContent).not.toContain("You do not have permission");
   });
 });

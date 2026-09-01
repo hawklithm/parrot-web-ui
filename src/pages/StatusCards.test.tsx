@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StatusCards } from "./StatusCards";
 import type { StatusCard } from "../api/statusCards";
+import { ApiError } from "@/api/client";
 
 const mockCompany = vi.hoisted<{ selectedCompanyId: string | null }>(() => ({ selectedCompanyId: "company-1" }));
 const mockStatusCardsApi = vi.hoisted(() => ({
@@ -137,6 +138,14 @@ describe("StatusCards", () => {
     mockStatusCardsApi.list.mockRejectedValue(new Error("boom"));
     const errored = renderApp();
     await waitForText(errored, "Unable to load status cards.");
+  });
+
+  it("shows a permission-denied state on a 403 response without the retry affordance", async () => {
+    mockStatusCardsApi.list.mockRejectedValue(new ApiError("Forbidden", 403, {}));
+    const c = renderApp();
+    await waitForText(c, "You do not have permission to view status cards.");
+    expect(c.textContent).not.toContain("Unable to load status cards.");
+    expect(c.textContent).not.toContain("Retry");
   });
 
   it("creates a card from the new-card form", async () => {

@@ -6,7 +6,7 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ExecutionWorkspaceDetail } from "./ExecutionWorkspaceDetail";
-
+import { ApiError } from "@/api/client";
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockExecutionWorkspacesApi = vi.hoisted(() => ({
@@ -318,5 +318,19 @@ describe("ExecutionWorkspaceDetail plugin slots", () => {
       "Routines",
       "Default",
     ]);
+  });
+
+  it("renders a permission-denied state when the workspace fetch returns 403", async () => {
+    mockExecutionWorkspacesApi.get.mockRejectedValue(new ApiError("Forbidden", 403, {}));
+    await render();
+    expect(container.textContent).toContain("You do not have permission to view this workspace.");
+    expect(container.textContent).not.toContain("Failed to load workspace");
+  });
+
+  it("renders the generic error message when the workspace fetch fails for another reason", async () => {
+    mockExecutionWorkspacesApi.get.mockRejectedValue(new Error("boom"));
+    await render();
+    expect(container.textContent).toContain("boom");
+    expect(container.textContent).not.toContain("You do not have permission");
   });
 });
