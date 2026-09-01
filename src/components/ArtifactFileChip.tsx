@@ -1,8 +1,9 @@
 import type { MouseEvent, ReactNode } from "react";
 import { FileCode2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { WorkspaceFileRef } from "../lib/paperclip-shared/src";
+import type { SourceTrustMetadata, WorkspaceFileRef } from "../lib/paperclip-shared/src";
 import { useFileViewer } from "@/context/FileViewerContext";
+import { SourceTrustBadge } from "./SourceTrustBadge";
 
 export interface ArtifactFileChipProps {
   workspaceFileRef: WorkspaceFileRef;
@@ -13,6 +14,7 @@ export interface ArtifactFileChipProps {
   onOpen?: (ref: WorkspaceFileRef) => void;
   showIcon?: boolean;
   title?: string;
+  sourceTrust?: SourceTrustMetadata | null;
 }
 
 function artifactFileDisplay(ref: WorkspaceFileRef) {
@@ -28,6 +30,7 @@ export function ArtifactFileChip({
   onOpen,
   showIcon = true,
   title,
+  sourceTrust,
 }: ArtifactFileChipProps) {
   const viewer = useFileViewer();
   const display = typeof label !== "undefined" ? label : artifactFileDisplay(workspaceFileRef);
@@ -47,10 +50,14 @@ export function ArtifactFileChip({
     canOpen ? "cursor-pointer" : null,
     className,
   );
+  const trustBadge = sourceTrust ? (
+    <SourceTrustBadge sourceTrust={sourceTrust} artifactLabel="work product" className="ml-auto" />
+  ) : null;
   const content = (
     <>
       {showIcon ? <FileCode2 aria-hidden="true" className="h-3 w-3 shrink-0 opacity-70" /> : null}
       <span className="max-w-full whitespace-normal break-all text-left">{display}</span>
+      {trustBadge}
     </>
   );
 
