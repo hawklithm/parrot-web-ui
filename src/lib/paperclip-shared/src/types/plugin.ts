@@ -39,7 +39,7 @@ import type { Routine, RoutineTrigger, RoutineVariable } from "./routine.js";
  * A JSON Schema object used for plugin config schemas and tool parameter schemas.
  * Plugins provide these as plain JSON Schema compatible objects.
  *
- * The Paperclip extension keywords below are recognised by the Paperclip UI
+ * The Paperclip extension keywords below are recognised by the Parrot UI
  * but are otherwise ignored by standard JSON Schema validators.
  */
 export type JsonSchema = {

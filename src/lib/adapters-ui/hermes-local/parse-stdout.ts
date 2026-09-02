@@ -9,7 +9,7 @@ function stripAnsi(text: string): string {
 }
 
 /**
- * Parse Hermes Agent stdout into TranscriptEntry objects for the Paperclip UI.
+ * Parse Hermes Agent stdout into TranscriptEntry objects for the Parrot UI.
  *
  * Hermes CLI quiet-mode output patterns:
  *   Assistant:  "  ┊ 💬 {text}"
@@ -17,7 +17,7 @@ function stripAnsi(text: string): string {
  *   Tool (pipe): "  [done] ┊ {emoji} {verb:9} {detail}  {duration} ({total})"
  *   System:     "[hermes] ..."
  *
- * We emit structured tool_call/tool_result pairs so Paperclip renders proper
+ * We emit structured tool_call/tool_result pairs so Parrot renders proper
  * tool cards (with status icons, expand/collapse) instead of raw stdout blocks.
  */
 

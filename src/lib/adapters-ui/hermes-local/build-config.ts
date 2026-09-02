@@ -1,7 +1,7 @@
 /**
  * Build adapter configuration from UI form values.
  *
- * Translates Paperclip's CreateConfigValues into the adapterConfig
+ * Translates Parrot's CreateConfigValues into the adapterConfig
  * object stored in the agent record.
  *
  * NOTE: Provider resolution happens at runtime in execute.ts, not here.
@@ -17,7 +17,7 @@ import {
 } from "../shared/constants";
 
 /**
- * Build a Hermes Agent adapter config from the Paperclip UI form values.
+ * Build a Hermes Agent adapter config from the Parrot UI form values.
  */
 export function buildHermesConfig(
   v: CreateConfigValues,
@@ -29,7 +29,7 @@ export function buildHermesConfig(
     ac.model = v.model.trim();
   }
 
-  // NOTE: Provider is NOT set here because the Paperclip UI form
+  // NOTE: Provider is NOT set here because the Parrot UI form
   // (CreateConfigValues) does not expose a provider field.
   // Instead, provider is resolved at runtime in execute.ts using
   // a priority chain:
@@ -40,7 +40,7 @@ export function buildHermesConfig(
   // This ensures correct provider routing even for agents created
   // before provider tracking existed.
 
-  // Execution limits — let the user configure these from the Paperclip UI.
+  // Execution limits — let the user configure these from the Parrot UI.
   // timeoutSec: wall-clock kill timeout for the hermes child process.
   // maxTurnsPerRun: maps to Hermes's --max-turns (agent tool-calling iterations).
   ac.timeoutSec = DEFAULT_TIMEOUT_SEC;
