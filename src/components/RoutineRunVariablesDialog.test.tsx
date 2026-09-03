@@ -22,6 +22,7 @@ vi.mock("../api/instanceSettings", () => ({
   },
 }));
 
+const useQueryMock = vi.fn();
 vi.mock("./IssueWorkspaceCard", async () => {
   const React = await import("react");
 
@@ -53,6 +54,14 @@ vi.mock("./IssueWorkspaceCard", async () => {
   };
 });
 
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: (options: unknown) => useQueryMock(options),
+  };
+});
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -65,6 +74,13 @@ async function settleEffects() {
 async function flushUi(callback: () => void) {
   flushSync(callback);
   await settleEffects();
+}
+async function waitFor(predicate: () => boolean, attempts = 30): Promise<void> {
+  for (let i = 0; i < attempts; i += 1) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error("waitFor predicate did not become true");
 }
 
 function createProject(): Project {
@@ -235,7 +251,12 @@ describe("RoutineRunVariablesDialog", () => {
       executionWorkspacePreference: "shared_workspace",
       executionWorkspaceSettings: { mode: "shared_workspace" },
     };
-    issueWorkspaceBranchName = null;
+    useQueryMock.mockImplementation((options: { queryKey: unknown[] }) => {
+      if (options.queryKey[0] === "instance") {
+        return { data: { enableIsolatedWorkspaces: true } };
+      }
+      return { data: undefined };
+    });
     latestWorkspaceIssue = null;
   });
 
