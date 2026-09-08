@@ -28,6 +28,10 @@ export default defineConfig(({ mode }) => ({
         "./src/lib/paperclip-adapter-utils/src/index.ts",
       ),
       lexical: path.resolve(__dirname, "./node_modules/lexical/Lexical.mjs"),
+      "parrot-plugin-sdk": path.resolve(
+        __dirname,
+        "./src/sdk/plugin/index.ts",
+      ),
     },
   },
   server: {
