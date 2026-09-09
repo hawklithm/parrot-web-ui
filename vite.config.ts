@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => ({
         __dirname,
         "./src/lib/paperclip-shared/src/index.ts",
       ),
-      "@assistant-ui/react": path.resolve(__dirname, "./src/lib/assistant-ui-stub"),
       "parrot-adapter-utils": path.resolve(
         __dirname,
         "./src/lib/paperclip-adapter-utils/src/index.ts",

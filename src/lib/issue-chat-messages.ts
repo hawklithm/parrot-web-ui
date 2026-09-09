@@ -553,7 +553,7 @@ function createCommentMessage(args: {
     role: "user",
     createdAt,
     content: [{ type: "text", text: contentText }],
-    attachments: [],
+    attachments: [] as import("@assistant-ui/core").CompleteAttachment[],
     metadata: { custom },
   };
   return message;
