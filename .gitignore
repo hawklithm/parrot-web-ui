@@ -44,3 +44,4 @@ tmp/
 
 # Runtime credentials and managed adapter state
 .paperclip-runtime/
+test-results/
