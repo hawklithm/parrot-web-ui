@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
  */
 const SYSTEM_ADAPTER_TYPES = new Set(["process", "http"]);
 
-type NewAgentDialogMode = "choices" | "runtime" | "invite" | "prompt" | "ask-ceo";
+type NewAgentDialogMode = "choices" | "runtime" | "invite" | "prompt";
 
 function isAgentAdapterType(type: string): boolean {
   return !SYSTEM_ADAPTER_TYPES.has(type);
@@ -49,7 +49,6 @@ export function NewAgentDialog() {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<NewAgentDialogMode>("choices");
   const [agentMessage, setAgentMessage] = useState("");
-  const [ceoTaskDescription, setCeoTaskDescription] = useState("");
   const [latestAgentPrompt, setLatestAgentPrompt] = useState<string | null>(null);
   const [latestAgentPromptCopied, setLatestAgentPromptCopied] = useState(false);
   const disabledTypes = useDisabledAdaptersSync();
@@ -57,7 +56,6 @@ export function NewAgentDialog() {
   function resetDialogState() {
     setMode("choices");
     setAgentMessage("");
-    setCeoTaskDescription("");
     setLatestAgentPrompt(null);
     setLatestAgentPromptCopied(false);
   }
@@ -78,7 +76,11 @@ export function NewAgentDialog() {
   });
 
   // Fetch existing agents for the "Ask CEO" flow
-  const { data: agents } = useQuery({
+  const {
+    data: agents,
+    isLoading: agentsLoading,
+    isError: agentsLoadFailed,
+  } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId && newAgentOpen,
@@ -119,82 +121,46 @@ export function NewAgentDialog() {
   }, [disabledTypes, serverAdapters]);
 
   function handleAskCeo() {
-    // 打开描述输入界面，而不是直接创建任务
-    setMode("ask-ceo");
-  }
-
-  async function handleCreateCeoTask() {
-    const userDescription = ceoTaskDescription.trim();
-    if (!userDescription || !selectedCompanyId) {
+    if (!selectedCompanyId) {
       pushToast({
-        kind: "error",
-        title: "缺少必要信息",
-        body: "请提供agent描述",
+        title: "No company selected",
+        body: "Select a company before asking the CEO to create an agent.",
+        tone: "error",
+      });
+      return;
+    }
+    if (agentsLoading) {
+      pushToast({
+        title: "Loading company agents",
+        body: "Wait for the CEO list to finish loading, then try again.",
+        tone: "info",
+      });
+      return;
+    }
+    if (agentsLoadFailed) {
+      pushToast({
+        title: "Could not load the CEO",
+        body: "Refresh the company agents and try again.",
+        tone: "error",
+      });
+      return;
+    }
+    if (!ceoAgent) {
+      pushToast({
+        title: "CEO agent not found",
+        body: "This company has no active CEO agent to receive the hiring request.",
+        tone: "error",
       });
       return;
     }
 
-    try {
-      // 直接调用agent-hires API,而不是创建Issue
-      const response = await agentsApi.hire(selectedCompanyId, {
-        name: userDescription.split('\n')[0].slice(0, 50) || "New Agent", // 使用描述的第一行作为名称
-        role: "general",
-        adapterType: "claude_local",
-        capabilities: userDescription,
-      });
-
-      if (response.approval) {
-        // 需要审批
-        pushToast({
-          kind: "success",
-          title: "Agent创建请求已提交",
-          body: `等待Board审批。审批ID: ${response.approval.id}`,
-        });
-        
-        // 可选:跳转到审批页面
-        if (response.approval.id) {
-          navigate(`/approvals/${response.approval.id}`);
-        }
-      } else if (response.agent) {
-        // 直接创建成功
-        pushToast({
-          kind: "success",
-          title: "Agent创建成功",
-          body: `${response.agent.name} 已创建`,
-        });
-        
-        // 刷新agent列表
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.agents(selectedCompanyId),
-        });
-        
-        // 跳转到agent详情页
-        navigate(`/agents/${response.agent.id}`);
-      }
-      
-      // 关闭对话框
-      closeNewAgent();
-      resetDialogState();
-    } catch (error) {
-      console.error("Failed to create agent:", error);
-      
-      let errorMessage = "创建agent失败,请稍后重试";
-      if (error instanceof ApiError) {
-        if (error.status === 403) {
-          errorMessage = "权限不足,无法创建agent。请联系管理员。";
-        } else if (error.status === 409) {
-          errorMessage = "Agent名称已存在,请使用不同的描述。";
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-      }
-      
-      pushToast({
-        kind: "error",
-        title: "创建失败",
-        body: errorMessage,
-      });
-    }
+    resetDialogState();
+    closeNewAgent();
+    openNewIssue({
+      assigneeAgentId: ceoAgent.id,
+      title: "Create a new agent",
+      description: "(type in what kind of agent you want here)",
+    });
   }
 
   function handleAdvancedConfig() {
@@ -300,7 +266,7 @@ export function NewAgentDialog() {
         showCloseButton={false}
         className={cn(
           "max-h-(--sz-calc-16) p-0 gap-0 overflow-hidden flex flex-col",
-          mode === "invite" || mode === "prompt" || mode === "ask-ceo" ? "sm:max-w-2xl" : "sm:max-w-md",
+          mode === "invite" || mode === "prompt" ? "sm:max-w-2xl" : "sm:max-w-md",
         )}
       >
         {/* Header */}
@@ -333,9 +299,14 @@ export function NewAgentDialog() {
                 </p>
               </div>
 
-              <Button className="w-full" size="lg" onClick={handleAskCeo}>
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleAskCeo}
+                disabled={agentsLoading || !selectedCompanyId}
+              >
                 <Bot className="h-4 w-4 mr-2" />
-                Ask the CEO to create a new agent
+                {agentsLoading ? "Loading CEO…" : "Ask the CEO to create a new agent"}
               </Button>
 
               <div className="grid gap-2">
@@ -397,96 +368,6 @@ export function NewAgentDialog() {
                 ))}
               </div>
             </>
-          ) : mode === "ask-ceo" ? (
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <button
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setMode("choices")}
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Back
-                </button>
-                <div className="space-y-1">
-                  <h2 className="text-sm font-semibold">Describe the agent you want</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Tell the CEO what kind of agent to create. Be specific about the agent's role, responsibilities, and any special requirements.
-                  </p>
-                </div>
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Agent requirements</span>
-                <Textarea
-                  value={ceoTaskDescription}
-                  onChange={(event) => setCeoTaskDescription(event.target.value)}
-                  className="min-h-48 resize-y font-mono text-sm"
-        placeholder={`Example:
-
-Create a **Backend Engineer** agent with these specifications:
-
-**Role**: Senior Backend Developer
-
-**Primary Responsibilities**:
-- Review and optimize Python code
-- Design and implement RESTful APIs
-- Write unit and integration tests
-- Database schema design and migrations
-- Performance tuning and optimization
-
-**Required Skills**:
-- Python (FastAPI, SQLAlchemy)
-- PostgreSQL
-- Redis caching
-- Docker and CI/CD
-
-**Configuration**:
-- Adapter: claude_local (Claude Sonnet 3.5)
-- Budget: Standard developer tier
-- Reports to: CTO`}
-                  maxLength={8000}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {ceoTaskDescription.length}/8000 characters
-                </p>
-              </label>
-
-              <div className="rounded-lg border border-amber-200 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-                <p className="font-medium mb-1">💡 提示</p>
-                <p>CEO agent会读取你的描述并自动调用API创建agent。描述越详细，创建的agent越符合预期。</p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleCreateCeoTask}
-                  disabled={!ceoTaskDescription.trim() || !selectedCompanyId}
-                >
-                  <Bot className="h-4 w-4 mr-2" />
-                  Create task for CEO
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setCeoTaskDescription(`Create a **Backend Engineer** agent:
-
-**Role**: Senior Backend Developer
-
-**Responsibilities**:
-- Python code review and optimization
-- RESTful API design and implementation
-- Write comprehensive tests
-- Database schema design
-- Performance tuning
-
-*: Python (FastAPI, SQLAlchemy), PostgreSQL, Redis, Docker
-
-**Config**: claude_local adapter, standard budget`);
-                  }}
-                >
-                  Use example
-                </Button>
-              </div>
-            </div>
           ) : mode === "invite" ? (
             <div className="space-y-5">
               <div className="space-y-2">

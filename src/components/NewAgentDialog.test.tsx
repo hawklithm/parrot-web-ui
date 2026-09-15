@@ -207,4 +207,72 @@ describe("NewAgentDialog", () => {
       root.unmount();
     });
   });
+
+  it("opens a new issue assigned to the CEO", async () => {
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <NewAgentDialog />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    const askCeoButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Ask the CEO to create a new agent"),
+    );
+    await act(async () => {
+      askCeoButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(closeNewAgentMock).toHaveBeenCalled();
+    expect(openNewIssueMock).toHaveBeenCalledWith({
+      assigneeAgentId: "agent-ceo",
+      title: "Create a new agent",
+      description: "(type in what kind of agent you want here)",
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("explains when the company has no CEO instead of opening an unassigned issue", async () => {
+    listAgentsMock.mockResolvedValueOnce([]);
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <NewAgentDialog />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+
+    const askCeoButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Ask the CEO to create a new agent"),
+    );
+    await act(async () => {
+      askCeoButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(openNewIssueMock).not.toHaveBeenCalled();
+    expect(pushToastMock).toHaveBeenCalledWith({
+      title: "CEO agent not found",
+      body: "This company has no active CEO agent to receive the hiring request.",
+      tone: "error",
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });
