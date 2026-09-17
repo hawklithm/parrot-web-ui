@@ -20,6 +20,7 @@ import {
   Pin,
   MessagesSquare,
   GanttChartSquare,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -215,6 +216,7 @@ export function Sidebar() {
           ) : null}
           <SidebarNavItem to="/artifacts" label="Artifacts" icon={Package} />
           <SidebarNavItem to="/skills" label="Skills" icon={Boxes} />
+          <SidebarNavItem to="/apps" label="Apps & tools" icon={ShieldCheck} />
           {showWorkspacesLink ? (
             <SidebarNavItem to="/workspaces" label="Workspaces" icon={GitBranch} />
           ) : null}

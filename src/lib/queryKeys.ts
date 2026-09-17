@@ -330,4 +330,19 @@ export const queryKeys = {
   adapters: {
     all: ["adapters"] as const,
   },
+  tools: {
+    applications: (companyId: string) => ["tools", "applications", companyId] as const,
+    connections: (companyId: string) => ["tools", "connections", companyId] as const,
+    profiles: (companyId: string) => ["tools", "profiles", companyId] as const,
+    policies: (companyId: string) => ["tools", "policies", companyId] as const,
+    audit: (companyId: string, filters: Record<string, unknown> = {}) =>
+      ["tools", "audit", companyId, filters] as const,
+    gallery: (companyId: string) => ["tools", "gallery", companyId] as const,
+    catalog: (connectionId: string) => ["tools", "catalog", connectionId] as const,
+    installs: (connectionId: string) => ["tools", "installs", connectionId] as const,
+    effectiveProfilesForAgent: (companyId: string, agentId: string) =>
+      ["tools", "effective", companyId, agentId] as const,
+    gateways: (companyId: string) => ["tools", "gateways", companyId] as const,
+    runtime: (companyId: string) => ["tools", "runtime", companyId] as const,
+  },
 };
