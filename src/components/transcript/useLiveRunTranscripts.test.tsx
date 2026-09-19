@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/client";
-import { useLiveRunTranscripts } from "./useLiveRunTranscripts";
+import { parsePersistedLogContent, useLiveRunTranscripts } from "./useLiveRunTranscripts";
 
 const { useQueryMock, logMock, buildTranscriptMock } = vi.hoisted(() => ({
   useQueryMock: vi.fn(() => ({ data: { censorUsernameInLogs: false } })),
@@ -147,6 +147,35 @@ describe("useLiveRunTranscripts", () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  it("parses legacy raw adapter JSONL output as stdout chunks", () => {
+    const systemLine = JSON.stringify({ type: "system", subtype: "init", session_id: "session-1" });
+    const assistantLine = JSON.stringify({
+      type: "assistant",
+      message: { content: [{ type: "text", text: "历史回复" }] },
+    });
+    const pending = new Map<string, string>();
+
+    const parsed = parsePersistedLogContent(
+      "run-legacy",
+      `${systemLine}\n${assistantLine}\n`,
+      pending,
+      true,
+    );
+
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]).toMatchObject({
+      stream: "stdout",
+      chunk: `${systemLine}\n`,
+      seq: undefined,
+    });
+    expect(parsed[1]).toMatchObject({
+      stream: "stdout",
+      chunk: `${assistantLine}\n`,
+      seq: undefined,
+    });
+    expect(parsed[0]?.ts).toEqual(expect.any(String));
   });
 
   it("reports initial hydration until the first persisted-log read completes", async () => {

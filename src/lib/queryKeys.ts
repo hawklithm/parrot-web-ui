@@ -271,6 +271,7 @@ export const queryKeys = {
     providerConfigs: (companyId: string) => ["secret-provider-configs", companyId] as const,
     usage: (secretId: string) => ["secrets", "usage", secretId] as const,
     accessEvents: (secretId: string) => ["secrets", "access-events", secretId] as const,
+    proposals: (companyId: string, status = "pending") => ["secret-proposals", companyId, status] as const,
     userDefinitions: (companyId: string) => ["user-secret-definitions", companyId] as const,
     userDefinitionCoverage: (companyId: string, definitionId: string) =>
       ["user-secret-definitions", companyId, definitionId, "coverage"] as const,
@@ -330,6 +331,26 @@ export const queryKeys = {
   adapters: {
     all: ["adapters"] as const,
   },
+  attention: (companyId: string) => ["attention", companyId] as const,
+  decisions: {
+    list: (companyId: string, filter: Record<string, unknown> = {}) =>
+      ["decisions", companyId, filter] as const,
+    detail: (id: string) => ["decisions", "detail", id] as const,
+    stats: (companyId: string) => ["decisions", companyId, "stats"] as const,
+  },
+  decisionQueues: {
+    list: (companyId: string) => ["decision-queues", companyId] as const,
+    seedRules: (companyId: string) => ["decision-queue-seed-rules", companyId] as const,
+    items: (companyId: string, key: string) => ["decision-queues", companyId, key, "items"] as const,
+    triage: (companyId: string, sourceKind: string, sourceId: string) =>
+      ["decision-triage", companyId, sourceKind, sourceId] as const,
+  },
+  folders: (companyId: string, kind: string) => ["folders", companyId, kind] as const,
+  audit: (companyId: string, filters: Record<string, unknown> = {}) =>
+    ["audit", companyId, filters] as const,
+  statusCards: (companyId: string) => ["status-cards", companyId] as const,
+  smokeLab: (companyId: string) => ["smoke-lab", companyId] as const,
+  summarySlots: (selector: Record<string, unknown>) => ["summary-slots", selector] as const,
   tools: {
     applications: (companyId: string) => ["tools", "applications", companyId] as const,
     connections: (companyId: string) => ["tools", "connections", companyId] as const,

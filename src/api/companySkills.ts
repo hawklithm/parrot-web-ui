@@ -46,6 +46,29 @@ export interface CatalogListQuery {
   q?: string;
 }
 
+export interface ProjectSkillCandidate {
+  slug: string;
+  name: string;
+  description?: string | null;
+  workspaceId: string;
+  workspaceName: string;
+  projectId: string;
+  projectName: string;
+  directoryRoot?: string;
+  relativePath: string;
+  status: "new" | "already_imported" | "conflict" | string;
+  reason?: string | null;
+  existingSkillId?: string | null;
+}
+
+export interface ProjectSkillScanPreview {
+  candidates: ProjectSkillCandidate[];
+  conflicts: CompanySkillProjectScanResult["conflicts"];
+  warnings: string[];
+  scannedWorkspaces: number;
+  discovered: number;
+}
+
 export const companySkillsApi = {
   list: (companyId: string, query: CompanySkillListQuery = {}) => {
     const params = new URLSearchParams();
@@ -219,6 +242,19 @@ export const companySkillsApi = {
     api.post<CompanySkillProjectScanResult>(
       `/companies/${encodeURIComponent(companyId)}/skills/scan-projects`,
       payload,
+    ),
+  browseProject: (companyId: string, payload: CompanySkillProjectScanRequest = {}) =>
+    api.post<ProjectSkillScanPreview>(
+      `/companies/${encodeURIComponent(companyId)}/skills/scan-projects`,
+      { ...payload, mode: "preview" },
+    ),
+  importProjectSelection: (
+    companyId: string,
+    selection: Array<{ workspaceId: string; path: string; slug?: string }>,
+  ) =>
+    api.post<CompanySkillProjectScanResult>(
+      `/companies/${encodeURIComponent(companyId)}/skills/scan-projects`,
+      { mode: "import", selection },
     ),
   installUpdate: (companyId: string, skillId: string) =>
     api.post<CompanySkill>(

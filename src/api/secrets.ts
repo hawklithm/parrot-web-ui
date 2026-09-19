@@ -22,6 +22,38 @@ export interface SecretUsageResponse {
   bindings: CompanySecretUsageBinding[];
 }
 
+export type SecretProposalKind = "secret" | "binding" | string;
+export type SecretProposalStatus = "pending" | "approved" | "rejected" | "withdrawn" | string;
+export interface SecretProposalView {
+  id: string;
+  companyId: string;
+  kind: SecretProposalKind;
+  status: SecretProposalStatus;
+  proposedName?: string | null;
+  proposedKey?: string | null;
+  proposedValue?: string | null;
+  secretId?: string | null;
+  target?: { id: string; name?: string | null; key?: string | null } | null;
+  proposedBy?: { id: string; name?: string | null } | null;
+  originIssue?: { id: string; identifier?: string | null; title?: string | null } | null;
+  rationale?: string | null;
+  rejectionReason?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+export interface ApproveSecretProposalInput {
+  secretName?: string;
+  secretKey?: string;
+  provider?: string;
+  value?: string | null;
+  externalRef?: string | null;
+  providerConfigId?: string | null;
+}
+
+export interface RejectSecretProposalInput { reason: string }
+
 /** One "My secrets" row: a company definition paired with the current user's own value (if set). */
 export interface MyUserSecretEntry {
   definition: UserSecretDefinition;
@@ -186,6 +218,12 @@ export const secretsApi = {
   remove: (id: string) => api.delete<{ ok: true }>(`/secrets/${id}`),
   usage: (id: string) => api.get<SecretUsageResponse>(`/secrets/${id}/usage`),
   accessEvents: (id: string) => api.get<SecretAccessEvent[]>(`/secrets/${id}/access-events`),
+  listProposals: (companyId: string, status: SecretProposalStatus = "pending") =>
+    api.get<SecretProposalView[]>(`/companies/${companyId}/secret-proposals?status=${encodeURIComponent(status)}`),
+  approveProposal: (companyId: string, proposalId: string, data: ApproveSecretProposalInput = {}) =>
+    api.post<SecretProposalView>(`/companies/${companyId}/secret-proposals/${proposalId}/approve`, data),
+  rejectProposal: (companyId: string, proposalId: string, data: RejectSecretProposalInput) =>
+    api.post<SecretProposalView>(`/companies/${companyId}/secret-proposals/${proposalId}/reject`, data),
 
   // --- User-specific secrets ---------------------------------------------
   // Admin: shared definitions each member fills in with their own value.

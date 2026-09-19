@@ -59,37 +59,82 @@ function isStructuredStreamingTextDelta(chunk: string) {
   return /"type"\s*:\s*"(?:acpx\.text_delta|text)"/.test(chunk);
 }
 
-function parsePersistedLogContent(
+/**
+ * Parse both Paperclip's wrapped NDJSON rows and Parrot's legacy persisted
+ * adapter output.  Paperclip stores each emitted chunk as
+ * `{ts, stream, chunk, seq}`, while older Parrot runs stored the adapter's
+ * stdout directly (Claude/Codex stream-json is one JSON object per line).
+ * Keeping the fallback here lets existing completed runs remain readable
+ * after the log contract is aligned.
+ */
+export function parsePersistedLogContent(
   runId: string,
   content: string,
   pendingByRun: Map<string, string>,
+  flushPending = false,
 ): Array<RunLogChunk & { dedupeKey: string }> {
   if (!content) return [];
 
   const pendingKey = `${runId}:records`;
   const combined = `${pendingByRun.get(pendingKey) ?? ""}${content}`;
   const split = combined.split("\n");
-  pendingByRun.set(pendingKey, split.pop() ?? "");
+  const trailing = split.pop() ?? "";
+  if (flushPending) {
+    pendingByRun.delete(pendingKey);
+    if (trailing.trim()) split.push(trailing);
+  } else {
+    pendingByRun.set(pendingKey, trailing);
+  }
 
   const parsed: Array<RunLogChunk & { dedupeKey: string }> = [];
-  for (const line of split) {
+  const fallbackTs = new Date().toISOString();
+  for (const [lineIndex, line] of split.entries()) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
-      const raw = JSON.parse(trimmed) as { ts?: unknown; stream?: unknown; chunk?: unknown; seq?: unknown };
+      const raw = JSON.parse(trimmed) as {
+        ts?: unknown;
+        timestamp?: unknown;
+        stream?: unknown;
+        chunk?: unknown;
+        seq?: unknown;
+      };
+      const hasWrapperMetadata =
+        typeof raw.ts === "string" ||
+        raw.stream === "stdout" ||
+        raw.stream === "stderr" ||
+        raw.stream === "system" ||
+        raw.seq !== undefined;
+      const isWrappedRow = typeof raw.chunk === "string" && hasWrapperMetadata;
       const stream = raw.stream === "stderr" || raw.stream === "system" ? raw.stream : "stdout";
-      const chunk = typeof raw.chunk === "string" ? raw.chunk : "";
-      const ts = typeof raw.ts === "string" ? raw.ts : new Date().toISOString();
-      if (!chunk) continue;
+      const chunk = isWrappedRow ? raw.chunk : `${trimmed}\n`;
+      const ts = typeof raw.ts === "string"
+        ? raw.ts
+        : typeof raw.timestamp === "string"
+          ? raw.timestamp
+          : fallbackTs;
       parsed.push({
         ts,
         stream,
         chunk,
-        seq: readChunkSeq(raw.seq),
-        dedupeKey: `log:${runId}:${ts}:${stream}:${chunk}`,
+        seq: isWrappedRow ? readChunkSeq(raw.seq) : undefined,
+        // Legacy raw output has no server sequence.  Use the line position
+        // within this read so repeated adapter events are not content-deduped.
+        dedupeKey: isWrappedRow
+          ? `log:${runId}:${ts}:${stream}:${chunk}`
+          : `legacy-log:${runId}:${lineIndex}:${trimmed}`,
       });
     } catch {
-      // Ignore malformed log rows.
+      // Raw text output is also a valid adapter log.  A partial JSON row is
+      // kept in `pendingByRun` by the normal offset reader and will be parsed
+      // on the next read; only complete non-JSON lines reach this fallback.
+      parsed.push({
+        ts: fallbackTs,
+        stream: "stdout",
+        chunk: `${trimmed}\n`,
+        seq: undefined,
+        dedupeKey: `legacy-log:${runId}:${lineIndex}:${trimmed}`,
+      });
     }
   }
 
@@ -284,7 +329,15 @@ export function useLiveRunTranscripts({
         const result = await heartbeatsApi.log(run.id, offset, logReadLimitBytes);
         if (cancelled) return;
 
-        appendChunks(run.id, parsePersistedLogContent(run.id, result.content, pendingLogRowsByRunRef.current));
+        appendChunks(
+          run.id,
+          parsePersistedLogContent(
+            run.id,
+            result.content,
+            pendingLogRowsByRunRef.current,
+            isTerminalStatus(run.status) && result.nextOffset === undefined,
+          ),
+        );
 
         if (result.nextOffset !== undefined) {
           logOffsetByRunRef.current.set(run.id, result.nextOffset);

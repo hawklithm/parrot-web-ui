@@ -11,15 +11,23 @@ export interface Message {
 }
 
 export interface Thread {
-  id: string;
-  messages: Message[];
+  id?: string;
+  messages: ThreadMessage[];
+  isRunning?: boolean;
+  append?: (message: AppendMessage) => Promise<void>;
 }
 
 export interface Runtime {
   thread: Thread;
-  append: (message: Partial<Message>) => void;
-  reload: () => void;
-  cancel: () => void;
+  send: (message: AppendMessage) => Promise<void>;
+  cancel: () => Promise<void>;
+}
+
+export interface ThreadMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: unknown;
+  [key: string]: unknown;
 }
 
 // External Store types
@@ -34,9 +42,10 @@ export interface ExternalStoreAdapter<T = unknown> {
 }
 
 export interface AppendMessage {
-  parentId: string | null;
+  parentId?: string | null;
   role: "user" | "assistant";
   content: Array<{ type: string; text?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
 }
 
 export interface TextMessagePart {
@@ -76,16 +85,22 @@ export function useRuntime() {
 
 // External Store Runtime Hook
 export function useExternalStoreRuntime(adapter: ExternalStoreAdapter): Runtime {
+  const append = async (message: AppendMessage) => {
+    if (adapter.onNew) {
+      await adapter.onNew({
+        ...message,
+        parentId: message.parentId ?? null,
+      });
+    }
+  };
+
   return {
     thread: {
       messages: adapter.messages as Message[],
       isRunning: adapter.isRunning,
+      append,
     },
-    send: async (message: AppendMessage) => {
-      if (adapter.onNew) {
-        await adapter.onNew(message);
-      }
-    },
+    send: append,
     cancel: adapter.onCancel || (() => Promise.resolve()),
   };
 }
@@ -95,9 +110,15 @@ export const AssistantRuntimeProvider = RuntimeProvider;
 
 // useAui hook
 export function useAui() {
+  const runtime = useRuntime();
   return {
-    runtime: useRuntime(),
-    thread: useThread(),
+    runtime,
+    // Paperclip's IssueChatThread uses the assistant-ui thread API shape:
+    // `api.thread().append(message)`. Keep the stub compatible with that
+    // contract instead of exposing the internal thread state directly.
+    thread: () => ({
+      append: runtime.thread.append ?? runtime.send,
+    }),
   };
 }
 

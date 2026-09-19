@@ -61,7 +61,14 @@ import { ProfileSettings } from "./pages/ProfileSettings";
 import { PluginManager } from "./pages/PluginManager";
 import { PluginSettings } from "./pages/PluginSettings";
 import { AdapterManager } from "./pages/AdapterManager";
+import { WhatNeedsMe } from "./pages/WhatNeedsMe";
+import { DecisionQueuePage } from "./pages/DecisionQueuePage";
+import { StatusCards } from "./pages/StatusCards";
 import { ToolsAccess } from "./pages/ToolsAccess";
+import { AuditFeed } from "./pages/AuditFeed";
+import { SmokeLab } from "./pages/SmokeLab";
+import { Folders } from "./pages/Folders";
+import { InboxAgentPolicy } from "./pages/InboxAgentPolicy";
 import { PluginPage } from "./pages/PluginPage";
 import { OrgChart } from "./pages/OrgChart";
 import { NewAgent } from "./pages/NewAgent";
@@ -86,10 +93,17 @@ function boardRoutes() {
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
       <Route path="dashboard/live" element={<DashboardLive />} />
+      <Route path="decisions" element={<DecisionQueuePage />} />
+      <Route path="decisions/queues/:queueKey" element={<DecisionQueuePage />} />
+      <Route path="what-needs-me" element={<WhatNeedsMe />} />
+      <Route path="status" element={<StatusCards />} />
       <Route path="apps" element={<ToolsAccess />} />
       <Route path="tools" element={<ToolsAccess />} />
       <Route path="apps/*" element={<ToolsAccess />} />
       <Route path="tools/*" element={<ToolsAccess />} />
+      <Route path="audit" element={<AuditFeed />} />
+      <Route path="smoke-lab" element={<SmokeLab />} />
+      <Route path="folders" element={<Folders />} />
       <Route path="timeline" element={<Timeline />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
@@ -226,6 +240,7 @@ function boardRoutes() {
       <Route path="inbox/blocked" element={<Inbox />} />
       <Route path="inbox/all" element={<Inbox />} />
       <Route path="inbox/requests" element={<JoinRequestQueue />} />
+      <Route path="inbox/agent-policy" element={<InboxAgentPolicy />} />
       <Route path="inbox/new" element={<Navigate to="/inbox/mine" replace />} />
       <Route path="u/:userSlug" element={<UserProfile />} />
       <Route path="design-guide" element={<DesignGuide />} />
@@ -469,8 +484,15 @@ export function App() {
           <Route path="pipelines/:pipelineId/items/:caseId" element={<UnprefixedBoardRedirect />} />
           <Route path="pipelines/:pipelineId/cases/:caseId" element={<UnprefixedBoardRedirect />} />
           <Route path="artifacts" element={<UnprefixedBoardRedirect />} />
+          <Route path="decisions" element={<UnprefixedBoardRedirect />} />
+          <Route path="what-needs-me" element={<UnprefixedBoardRedirect />} />
+          <Route path="status" element={<UnprefixedBoardRedirect />} />
           <Route path="apps" element={<UnprefixedBoardRedirect />} />
           <Route path="tools" element={<UnprefixedBoardRedirect />} />
+          <Route path="audit" element={<UnprefixedBoardRedirect />} />
+          <Route path="smoke-lab" element={<UnprefixedBoardRedirect />} />
+          <Route path="folders" element={<UnprefixedBoardRedirect />} />
+          <Route path="inbox/agent-policy" element={<UnprefixedBoardRedirect />} />
           <Route path="u/:userSlug" element={<UnprefixedBoardRedirect />} />
           <Route path="skills/studio" element={<UnprefixedBoardRedirect />} />
           <Route path="skills/studio/new" element={<UnprefixedBoardRedirect />} />

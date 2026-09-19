@@ -25,6 +25,9 @@ import { useToastActions } from "../context/ToastContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
 import { AgentSkillsTab } from "./agent-skills/AgentSkillsTab";
+import { AgentToolsTab } from "./AgentToolsTab";
+import { AgentSecretsTab } from "./AgentSecretsTab";
+import { AuditFeed } from "./AuditFeed";
 import { AgentConfigForm } from "../components/AgentConfigForm";
 import { PageTabBar } from "../components/PageTabBar";
 import { adapterLabels, roleLabels, help } from "../components/agent-config-primitives";
@@ -124,6 +127,34 @@ const runStatusIcons: Record<string, { icon: typeof CheckCircle2; color: string 
 };
 
 const RUN_LOG_PAGE_BYTES = 256_000;
+
+function closeRunEventsSocketQuietly(socket: WebSocket | null, reason: string) {
+  if (!socket) return;
+
+  if (socket.readyState === WebSocket.CONNECTING) {
+    // Closing a socket while the handshake is still in progress produces a
+    // noisy browser error during StrictMode effects and rapid navigation.
+    socket.onopen = () => {
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+      socket.close(1000, reason);
+    };
+    socket.onmessage = null;
+    socket.onerror = () => undefined;
+    socket.onclose = null;
+    return;
+  }
+
+  socket.onopen = null;
+  socket.onmessage = null;
+  socket.onerror = null;
+  socket.onclose = null;
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.close(1000, reason);
+  }
+}
 
 const REDACTED_ENV_VALUE = "***REDACTED***";
 const SECRET_ENV_KEY_RE =
@@ -264,12 +295,15 @@ function scrollToContainerBottom(container: ScrollContainer, behavior: ScrollBeh
   container.scrollTo({ top: container.scrollHeight, behavior });
 }
 
-type AgentDetailView = "dashboard" | "instructions" | "configuration" | "skills" | "runs" | "budget";
+type AgentDetailView = "dashboard" | "instructions" | "configuration" | "secrets" | "skills" | "tools" | "runs" | "audit" | "budget";
 
 function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "instructions" || value === "prompts") return "instructions";
   if (value === "configure" || value === "configuration") return "configuration";
   if (value === "skills") return "skills";
+  if (value === "secrets") return "secrets";
+  if (value === "tools") return "tools";
+  if (value === "audit") return "audit";
   if (value === "budget") return "budget";
   if (value === "runs") return value;
   return "dashboard";
@@ -882,13 +916,19 @@ export function AgentDetail() {
     const canonicalTab =
       activeView === "instructions"
         ? "instructions"
-        : activeView === "configuration"
-          ? "configuration"
-          : activeView === "skills"
-            ? "skills"
-            : activeView === "runs"
-              ? "runs"
-              : activeView === "budget"
+          : activeView === "configuration"
+            ? "configuration"
+            : activeView === "secrets"
+              ? "secrets"
+            : activeView === "skills"
+              ? "skills"
+              : activeView === "tools"
+                ? "tools"
+              : activeView === "runs"
+                ? "runs"
+                : activeView === "audit"
+                  ? "audit"
+                : activeView === "budget"
                 ? "budget"
               : "dashboard";
     if (routeAgentRef !== canonicalAgentRef || urlTab !== canonicalTab) {
@@ -991,8 +1031,12 @@ export function AgentDetail() {
         crumbs.push({ label: "Instructions" });
       } else if (activeView === "configuration") {
         crumbs.push({ label: "Configuration" });
-      // } else if (activeView === "skills") { // TODO: bring back later
-      //   crumbs.push({ label: "Skills" });
+      } else if (activeView === "secrets") {
+        crumbs.push({ label: "Secrets" });
+      } else if (activeView === "tools") {
+        crumbs.push({ label: "Tools" });
+      } else if (activeView === "audit") {
+        crumbs.push({ label: "Audit" });
       } else if (activeView === "runs") {
         crumbs.push({ label: "Runs" });
       } else if (activeView === "budget") {
@@ -1235,9 +1279,12 @@ export function AgentDetail() {
             items={[
               { value: "dashboard", label: "Dashboard" },
               { value: "instructions", label: "Instructions" },
+              { value: "secrets", label: "Secrets" },
               { value: "skills", label: "Skills" },
+              { value: "tools", label: "Tools" },
               { value: "configuration", label: "Configuration" },
               { value: "runs", label: "Runs" },
+              { value: "audit", label: "Audit" },
               { value: "budget", label: "Budget" },
             ]}
             value={activeView}
@@ -1347,11 +1394,19 @@ export function AgentDetail() {
         />
       )}
 
+      {activeView === "secrets" && resolvedCompanyId && (
+        <AgentSecretsTab agent={agent} companyId={resolvedCompanyId} />
+      )}
+
       {activeView === "skills" && (
         <AgentSkillsTab
           agent={agent}
           companyId={resolvedCompanyId ?? undefined}
         />
+      )}
+
+      {activeView === "tools" && resolvedCompanyId && (
+        <AgentToolsTab agent={agent} companyId={resolvedCompanyId} />
       )}
 
       {activeView === "runs" && (
@@ -1364,6 +1419,10 @@ export function AgentDetail() {
           adapterType={agent.adapterType}
           adapterConfig={agent.adapterConfig}
         />
+      )}
+
+      {activeView === "audit" && resolvedCompanyId && (
+        <AuditFeed companyId={resolvedCompanyId} lockedAgentId={agent.id} hideHeader />
       )}
 
       {activeView === "budget" && resolvedCompanyId ? (
@@ -3759,7 +3818,8 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
       };
 
       socket.onerror = () => {
-        socket?.close();
+        // Let onclose schedule the reconnect. Closing here while CONNECTING
+        // causes the browser's "closed before connection established" error.
       };
 
       socket.onclose = () => {
@@ -3774,13 +3834,7 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
       closed = true;
       setIsStreamingConnected(false);
       if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
-      if (socket) {
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
-        socket.close(1000, "run_detail_unmount");
-      }
+      closeRunEventsSocketQuietly(socket, "run_detail_unmount");
     };
   }, [isLive, run.companyId, run.id, run.agentId]);
 

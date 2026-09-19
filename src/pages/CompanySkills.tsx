@@ -22,6 +22,7 @@ import type {
   CompanySkillVersion,
 } from "../lib/paperclip-shared/src";
 import { companySkillsApi } from "../api/companySkills";
+import { ImportSkillsFromProjectDialog } from "./skills/ImportSkillsFromProjectDialog";
 import { agentsApi } from "../api/agents";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
@@ -882,6 +883,7 @@ export function DiscoveryGrid({
   onImport,
   onBrowseCatalog,
   onScan,
+  onImportProject,
   scanPending,
   scanStatus,
 }: {
@@ -905,6 +907,7 @@ export function DiscoveryGrid({
   onImport: () => void;
   onBrowseCatalog: () => void;
   onScan: () => void;
+  onImportProject?: () => void;
   scanPending: boolean;
   scanStatus: string | null;
 }) {
@@ -1014,6 +1017,12 @@ export function DiscoveryGrid({
           >
             <RefreshCw className={cn("h-4 w-4", scanPending && "animate-spin")} />
           </Button>
+          {onImportProject ? (
+            <Button variant="outline" size="sm" onClick={onImportProject}>
+              <FolderOpen className="h-3.5 w-3.5" />
+              Import project skills
+            </Button>
+          ) : null}
           <Button asChild variant="outline" size="sm">
             <Link to="/skills/studio">
               <FlaskConical className="h-3.5 w-3.5" />
@@ -3608,6 +3617,7 @@ export function CompanySkills() {
   const [discoverySort, setDiscoverySort] = useState<DiscoverySort>("agents");
   const [createError, setCreateError] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [projectImportDialogOpen, setProjectImportDialogOpen] = useState(false);
   const parsedRoute = useMemo(() => parseSkillRoute(routePath), [routePath]);
   const isStudioNew = routePath === "studio/new";
   const routeSkillToken = isStudioNew ? null : parsedRoute.skillToken;
@@ -4510,6 +4520,14 @@ export function CompanySkills() {
         </DialogContent>
       </Dialog>
 
+      {selectedCompanyId ? (
+        <ImportSkillsFromProjectDialog
+          companyId={selectedCompanyId}
+          open={projectImportDialogOpen}
+          onOpenChange={setProjectImportDialogOpen}
+        />
+      ) : null}
+
       {isStudioNew ? (
         <div className="min-h-(--sz-calc-30)">
           <div className="border-b border-border px-4 py-5">
@@ -4561,6 +4579,7 @@ export function CompanySkills() {
           totalCount={discoveryCards.length}
           onCreate={() => navigate(skillStudioNewRoute())}
           onImport={() => setImportDialogOpen(true)}
+          onImportProject={() => setProjectImportDialogOpen(true)}
           onBrowseCatalog={() => setDiscoveryTab("catalog")}
           onScan={() => scanProjects.mutate()}
           scanPending={scanProjects.isPending}

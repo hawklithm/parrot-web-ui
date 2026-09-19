@@ -95,6 +95,7 @@ import { copyTextToClipboard } from "../lib/clipboard";
 import { PageTabBar } from "../components/PageTabBar";
 import { ImportFromVaultDialog } from "./secrets/ImportFromVaultDialog";
 import { MyUserSecretsTab } from "./secrets/MyUserSecretsTab";
+import { ProposalsTab } from "./secrets/ProposalsTab";
 import { SetMyUserSecretDialog } from "./secrets/SetMyUserSecretDialog";
 import {
   coverageSummaryLabel,
@@ -105,7 +106,7 @@ import type { MyUserSecretEntry } from "../api/secrets";
 type CreateMode = "managed" | "external";
 type SecretValueProvider = "company" | "user";
 type ProvidedByFilter = "all" | SecretValueProvider;
-type SecretsTab = "secrets" | "my-secrets" | "vaults";
+type SecretsTab = "secrets" | "my-secrets" | "proposals" | "vaults";
 
 type UnifiedSecretRow =
   | { id: string; kind: "company"; secret: CompanySecret }
@@ -697,6 +698,14 @@ export function Secrets() {
     queryFn: () => secretsApi.providerConfigs(selectedCompanyId!),
     enabled: Boolean(selectedCompanyId),
     retry: false,
+  });
+
+  const proposalsQuery = useQuery({
+    queryKey: selectedCompanyId
+      ? queryKeys.secrets.proposals(selectedCompanyId)
+      : ["secret-proposals", "__disabled__"],
+    queryFn: () => secretsApi.listProposals(selectedCompanyId!),
+    enabled: Boolean(selectedCompanyId),
   });
 
   const secrets = secretsQuery.data ?? EMPTY_SECRETS;
@@ -1447,6 +1456,7 @@ export function Secrets() {
           items={[
             { value: "secrets", label: "Secrets" },
             { value: "my-secrets", label: "My secrets" },
+            { value: "proposals", label: proposalsQuery.data?.length ? `Proposals (${proposalsQuery.data.length})` : "Proposals" },
             { value: "vaults", label: "Provider vaults" },
           ]}
           align="start"
@@ -1694,6 +1704,9 @@ export function Secrets() {
           className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
         >
           <MyUserSecretsTab companyId={selectedCompanyId} />
+        </TabsContent>
+        <TabsContent value="proposals" className="min-h-0 flex-1 overflow-y-auto">
+          <ProposalsTab companyId={selectedCompanyId} />
         </TabsContent>
         <TabsContent value="vaults" className="min-h-0 flex-1 overflow-y-auto">
           <ProviderVaultsTab

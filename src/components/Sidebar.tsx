@@ -20,6 +20,8 @@ import {
   Pin,
   MessagesSquare,
   GanttChartSquare,
+  ListChecks,
+  BarChart3,
   ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
@@ -191,6 +193,7 @@ export function Sidebar() {
             badgeTone={inboxBadge.failedRuns > 0 ? "danger" : "default"}
             alert={inboxBadge.failedRuns > 0}
           />
+          <SidebarNavItem to="/decisions" label="What needs me" icon={ListChecks} />
           {conferenceRoomChatEnabled ? (
             <SidebarNavItem to="/board-chat" label="Conference Room" icon={MessagesSquare} />
           ) : null}
@@ -216,6 +219,7 @@ export function Sidebar() {
           ) : null}
           <SidebarNavItem to="/artifacts" label="Artifacts" icon={Package} />
           <SidebarNavItem to="/skills" label="Skills" icon={Boxes} />
+          <SidebarNavItem to="/status" label="Status cards" icon={BarChart3} />
           <SidebarNavItem to="/apps" label="Apps & tools" icon={ShieldCheck} />
           {showWorkspacesLink ? (
             <SidebarNavItem to="/workspaces" label="Workspaces" icon={GitBranch} />
