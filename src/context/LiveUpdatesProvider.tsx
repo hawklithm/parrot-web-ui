@@ -813,6 +813,28 @@ function invalidateHeartbeatQueries(
     queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.heartbeats(companyId, agentId) });
   }
+
+  const runId = readString(payload.runId);
+  if (runId) {
+    // The open run's detail pane and its "Tasks Touched" list both read state
+    // the run itself mutates, and neither is keyed by company/agent — without
+    // these the pane keeps rendering whatever it fetched on mount.
+    queryClient.invalidateQueries({ queryKey: queryKeys.runDetail(runId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.runIssues(runId) });
+  }
+}
+
+/**
+ * Reconcile the caches the socket drives after a reconnect. Events delivered
+ * while the socket was down cannot be replayed, so a run that settled during
+ * the gap would stay stale until the next unrelated frame.
+ *
+ * The runs table is registered under an agent-scoped key, so the company-wide
+ * invalidation has to be a prefix — see `queryKeys.heartbeats`.
+ */
+function reconcileAfterReconnect(queryClient: QueryClient, companyId: string) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.liveRuns(companyId) });
+  queryClient.invalidateQueries({ queryKey: queryKeys.heartbeats(companyId) });
 }
 
 function invalidateHeartbeatProgressQueries(
@@ -1165,9 +1187,11 @@ export const __liveUpdatesTestUtils = {
   applyRunLiveStatusPatchToCaches,
   hydrateVisibleIssueComment,
   invalidateActivityQueries,
+  invalidateHeartbeatQueries,
   invalidateHeartbeatProgressQueries,
   invalidateVisibleIssueRunQueries,
   readRunLiveStatusPatchFromPayload,
+  reconcileAfterReconnect,
   resolveLiveCompanyId,
   shouldDeferIssueRefetchForVisibleAgentActivity,
   shouldDeferVisibleIssueCommentActivity,
@@ -1248,6 +1272,7 @@ export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
         }
         if (reconnectAttempt > 0) {
           gateRef.current.suppressUntil = Date.now() + RECONNECT_SUPPRESS_MS;
+          reconcileAfterReconnect(queryClient, liveCompanyId);
         }
         reconnectAttempt = 0;
       };

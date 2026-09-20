@@ -37,7 +37,7 @@ import { redactCommandText as redactCommandSecretText } from "../lib/paperclip-a
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { assetsApi } from "../api/assets";
 import { getUIAdapter, buildTranscript, onAdapterChange } from "../adapters";
-import { StatusBadge } from "../components/StatusBadge";
+import { IssueStatusBadge, StatusBadge } from "../components/StatusBadge";
 import { MarkdownBody } from "../components/MarkdownBody";
 import { CopyText } from "../components/CopyText";
 import { EntityRow } from "../components/EntityRow";
@@ -383,6 +383,19 @@ export function buildHeartbeatProgressLogLine(
 
 export function heartbeatProgressLogLineKey(line: RunLogChunk): string {
   return `${line.ts}\u0000${line.stream}\u0000${line.chunk}`;
+}
+
+/**
+ * Poll cadence for the open run's detail query. A run that is queued/running
+ * has no more live frames guaranteed to arrive (the socket can drop, and the
+ * terminal frame has already been consumed by the time the page opens), so the
+ * detail pane reconciles against the DB on a timer until the run settles.
+ * Settled runs never poll — their rows are immutable.
+ */
+export function runDetailRefetchIntervalMs(status: HeartbeatRun["status"]): 5000 | 15000 | false {
+  if (status === "queued") return 5000;
+  if (status === "running") return 15000;
+  return false;
 }
 
 export function RunInvocationCard({
@@ -1596,7 +1609,7 @@ function AgentOverview({
                 identifier={issue.identifier ?? issue.id.slice(0, 8)}
                 title={issue.title}
                 to={`/issues/${issue.identifier ?? issue.id}`}
-                trailing={<StatusBadge status={issue.status} />}
+                trailing={<IssueStatusBadge status={issue.status} />}
               />
             ))}
             {assignedIssues.length > 10 && (
@@ -2967,6 +2980,8 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
     queryKey: queryKeys.runDetail(initialRun.id),
     queryFn: () => heartbeatsApi.get(initialRun.id),
     enabled: Boolean(initialRun.id),
+    refetchInterval: (query) =>
+      runDetailRefetchIntervalMs((query.state.data ?? initialRun).status),
   });
   const run = hydratedRun ?? initialRun;
   const metrics = runMetrics(run);
@@ -3418,7 +3433,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
                 className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-accent/20 transition-colors text-left no-underline text-inherit"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <StatusBadge status={issue.status} />
+                  <IssueStatusBadge status={issue.status} />
                   <span className="truncate">{issue.title}</span>
                 </div>
                 <span className="font-mono text-muted-foreground shrink-0 ml-2">{issue.identifier ?? issue.issueId.slice(0, 8)}</span>

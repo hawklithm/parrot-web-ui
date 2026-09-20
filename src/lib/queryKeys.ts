@@ -306,8 +306,15 @@ export const queryKeys = {
     ["usage-window-spend", companyId] as const,
   usageQuotaWindows: (companyId: string) =>
     ["usage-quota-windows", companyId] as const,
+  // Agent-scoped runs table. Omitting the agent id has to drop the element
+  // instead of appending `undefined`: invalidateQueries matches query keys
+  // element-wise, so a literal `undefined` slot only ever matches another
+  // `undefined` slot and never the `["heartbeats", companyId, agentId]` keys
+  // the runs table actually registers.
   heartbeats: (companyId: string, agentId?: string) =>
-    ["heartbeats", companyId, agentId] as const,
+    agentId
+      ? (["heartbeats", companyId, agentId] as const)
+      : (["heartbeats", companyId] as const),
   runDetail: (runId: string) => ["heartbeat-run", runId] as const,
   runWorkspaceOperations: (runId: string) => ["heartbeat-run", runId, "workspace-operations"] as const,
   liveRuns: (companyId: string) => ["live-runs", companyId] as const,

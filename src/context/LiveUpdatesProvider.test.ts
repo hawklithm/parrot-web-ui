@@ -10,6 +10,7 @@ vi.mock("../api/issues", () => ({
   },
 }));
 
+import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { __liveUpdatesTestUtils } from "./LiveUpdatesProvider";
 import { queryKeys } from "../lib/queryKeys";
@@ -98,6 +99,92 @@ describe("LiveUpdatesProvider issue invalidation", () => {
     expect(invalidations).toContainEqual({
       queryKey: queryKeys.issues.comments("issue-1"),
     });
+  });
+
+  it("refreshes the open run and its touched issues when a run lifecycle event arrives", () => {
+    const invalidations: unknown[] = [];
+    const queryClient = {
+      invalidateQueries: (input: unknown) => {
+        invalidations.push(input);
+      },
+      getQueryData: () => undefined,
+    };
+
+    __liveUpdatesTestUtils.invalidateHeartbeatQueries(
+      queryClient as never,
+      "company-1",
+      {
+        runId: "run-1",
+        agentId: "agent-1",
+        status: "failed",
+      },
+    );
+
+    expect(invalidations).toContainEqual({
+      queryKey: queryKeys.runDetail("run-1"),
+    });
+    expect(invalidations).toContainEqual({
+      queryKey: queryKeys.runIssues("run-1"),
+    });
+    expect(invalidations).toContainEqual({
+      queryKey: queryKeys.heartbeats("company-1", "agent-1"),
+    });
+  });
+
+  it("reconciles the agent-scoped runs table after a reconnect", () => {
+    // A stub that records call arguments cannot catch a key that matches
+    // nothing, so this drives a real cache: the runs table registers
+    // ["heartbeats", companyId, agentId] while the reconnect reconcile only
+    // knows the company.
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    for (const key of [
+      queryKeys.liveRuns("company-1"),
+      queryKeys.heartbeats("company-1"),
+      queryKeys.heartbeats("company-1", "agent-1"),
+      [...queryKeys.heartbeats("company-1"), "limit", 50],
+      queryKeys.heartbeats("company-2", "agent-2"),
+    ]) {
+      queryClient.setQueryData(key, []);
+    }
+
+    __liveUpdatesTestUtils.reconcileAfterReconnect(queryClient as never, "company-1");
+
+    const invalidatedKeys = queryClient
+      .getQueryCache()
+      .findAll()
+      .filter((query) => query.state.isInvalidated)
+      .map((query) => JSON.stringify(query.queryKey))
+      .sort();
+
+    // Prefix match has to cover the agent-scoped runs table (and the inbox's
+    // "limit"-suffixed variant) without crossing into another company.
+    expect(invalidatedKeys).toEqual([
+      JSON.stringify(queryKeys.liveRuns("company-1")),
+      JSON.stringify(queryKeys.heartbeats("company-1")),
+      JSON.stringify(queryKeys.heartbeats("company-1", "agent-1")),
+      JSON.stringify([...queryKeys.heartbeats("company-1"), "limit", 50]),
+    ].sort());
+  });
+
+  it("leaves run-keyed queries alone for heartbeat events without a runId", () => {
+    const invalidations: unknown[] = [];
+    const queryClient = {
+      invalidateQueries: (input: unknown) => {
+        invalidations.push(input);
+      },
+      getQueryData: () => undefined,
+    };
+
+    __liveUpdatesTestUtils.invalidateHeartbeatQueries(
+      queryClient as never,
+      "company-1",
+      { agentId: "agent-1" },
+    );
+
+    expect(invalidations).not.toContainEqual({ queryKey: queryKeys.runDetail("run-1") });
+    expect(invalidations).not.toContainEqual({ queryKey: queryKeys.runIssues("run-1") });
   });
 
   it("keeps heartbeat progress invalidation scoped away from hot list queries", () => {

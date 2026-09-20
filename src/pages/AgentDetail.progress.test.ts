@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildHeartbeatProgressLogLine,
   heartbeatProgressLogLineKey,
+  runDetailRefetchIntervalMs,
 } from "./AgentDetail";
 
 describe("buildHeartbeatProgressLogLine", () => {
@@ -57,5 +58,19 @@ describe("heartbeatProgressLogLineKey", () => {
     expect(heartbeatProgressLogLineKey(line)).toBe(
       "2026-07-04T05:03:00.000Z\u0000system\u0000[workspace] Syncing issue history",
     );
+  });
+});
+
+describe("runDetailRefetchIntervalMs", () => {
+  it("polls fast while a run waits to start and slower while it runs", () => {
+    expect(runDetailRefetchIntervalMs("queued")).toBe(5000);
+    expect(runDetailRefetchIntervalMs("running")).toBe(15000);
+  });
+
+  it("stops polling once the run is settled", () => {
+    expect(runDetailRefetchIntervalMs("succeeded")).toBe(false);
+    expect(runDetailRefetchIntervalMs("failed")).toBe(false);
+    expect(runDetailRefetchIntervalMs("timed_out")).toBe(false);
+    expect(runDetailRefetchIntervalMs("cancelled")).toBe(false);
   });
 });
